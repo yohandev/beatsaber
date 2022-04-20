@@ -1,29 +1,78 @@
 import sqlite3
-import datetime
 
 db = '/var/jail/home/team27/beatsaber.db'
-now = datetime.datetime.now()
 
 
 def request_handler(request):
-    if request["method"] == "POST":
-        dir = request['form']['dir']
+    if request['method'] == 'GET':
+        (dir, score) = get_data()
+        return {'dir': str(dir),
+                'score': int(score)}
 
-        with sqlite3.connect(db) as c:
-            c.execute("""CREATE TABLE IF NOT EXISTS sensor_data (time_ timestamp, direction text, score int);""")  # noqa: E501
-            c.execute("INSERT INTO sensor_data (time_, direction) VALUES (?, ?)", (datetime.datetime.now(), dir))  # noqa: E501
+    elif request['method'] == 'POST':
+        dir = str(request['form']['dir'])
+        score = get_score()
+        set_data(dir, score)
 
-        return "Data POSTED successfully"
+        # return {'score': int(score)}
+        # set_data(dir, score)
+        return {'dir': str(dir),
+                'score': int(score)}
 
-    elif request['method'] == 'GET':
-        with sqlite3.connect(db) as c:
-            c.execute("""CREATE TABLE IF NOT EXISTS sensor_data (time_ timestamp, direction text, score int);""")  # noqa: E501
-            c.execute("SELECT * FROM sensor_data")
-            data = c.fetchone()
-        return {
-            'time': data[0],
-            'dir': data[1],
-            'score': data[2]
-        }
     else:
-        return "Invalid HTTP method for this url."
+        return None
+
+
+def create_database():
+    conn = sqlite3.connect(db)
+    c = conn.cursor()
+
+    c.execute("""CREATE TABLE IF NOT EXISTS sensor_data
+        (dir text, score int);""")  # noqa: E501
+
+    conn.commit()
+    conn.close()
+
+
+def set_data(dir, score):
+    create_database()
+    conn = sqlite3.connect(db)
+    c = conn.cursor()
+
+    c.execute("DELETE FROM sensor_data")
+    conn.commit()
+
+    c.execute("INSERT into sensor_data VALUES (?, ?)", (dir, score))
+
+    conn.commit()
+    conn.close()
+
+
+def get_data():
+    create_database()
+    conn = sqlite3.connect(db)
+    c = conn.cursor()
+
+    c.execute('''SELECT * FROM sensor_data''')
+    data = c.fetchone()
+    if data is None:
+        return ("no move", 0)
+
+    conn.close()
+
+    return data
+
+
+def get_score():
+    create_database()
+    conn = sqlite3.connect(db)
+    c = conn.cursor()
+
+    c.execute('''SELECT score FROM sensor_data''')
+    score = c.fetchone()
+    if score is None:
+        return 0
+
+    conn.close()
+
+    return score[0]

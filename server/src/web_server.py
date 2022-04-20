@@ -1,19 +1,11 @@
 import sqlite3
-import datetime
 
 db = '/var/jail/home/team27/beatsaber.db'
-now = datetime.datetime.now()
 
 
 def request_handler(request):
     if request['method'] == 'GET':
-        with sqlite3.connect(db) as c:
-            c.execute("""CREATE TABLE IF NOT EXISTS sensor_data (time_ timestamp, direction text, score int);""")  # noqa: E501
-            all_data = c.execute("SELECT * FROM sensor_data")
-
-            data = all_data.fetchone()
-        # return data
-        (time, dir, score) = data
+        (dir, score) = get_data()
         return f'''
             <!DOCTYPE html>
             <html>
@@ -39,15 +31,67 @@ def request_handler(request):
             '''
 
     elif request['method'] == 'POST':
-        score_num = int(request['form']['score'])
-        with sqlite3.connect(db) as c:
-            c.execute("""CREATE TABLE IF NOT EXISTS sensor_data (time_ timestamp, direction text, score int DEFAULT 0 NOT NULL);""")
-            data = c.execute('''SELECT time_, direction FROM sensor_data''')
-            (time, direction) = data.fetchone()
-            c.execute("INSERT INTO sensor_data VALUES (?, ?, ?)", (time, direction, score_num))
+        dir = get_dir()
+        score = int(request['form']['score'])
+        set_data(dir, score)
 
         return '<h1>Game Score Updated!:</h1> <p>Score: {}</p><br> \
-            <a href="./web_server.py">Change Game Score</a>'.format(score_num)
+            <a href="./web_server.py">Change Game Score</a>'.format(score)
 
     else:
         return '<h1>Invalid request</h1>'
+
+
+def create_database():
+    conn = sqlite3.connect(db)
+    c = conn.cursor()
+
+    c.execute("""CREATE TABLE IF NOT EXISTS sensor_data
+        (dir text, score int);""")  # noqa: E501
+
+    conn.commit()
+    conn.close()
+
+
+def set_data(dir, score):
+    create_database()
+    conn = sqlite3.connect(db)
+    c = conn.cursor()
+
+    c.execute("DELETE FROM sensor_data")
+    conn.commit()
+
+    c.execute("INSERT into sensor_data VALUES (?, ?)", (dir, score))
+
+    conn.commit()
+    conn.close()
+
+
+def get_data():
+    create_database()
+    conn = sqlite3.connect(db)
+    c = conn.cursor()
+
+    c.execute('''SELECT * FROM sensor_data''')
+    data = c.fetchone()
+    if data is None:
+        return ("no move", 0)
+
+    conn.close()
+
+    return data
+
+
+def get_dir():
+    create_database()
+    conn = sqlite3.connect(db)
+    c = conn.cursor()
+
+    c.execute('''SELECT dir FROM sensor_data''')
+    dir = c.fetchone()
+    if dir is None:
+        return "no move"
+
+    conn.close()
+
+    return dir[0]

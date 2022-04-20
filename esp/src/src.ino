@@ -98,7 +98,6 @@ void loop() {
       strcpy(direction, "down");
     }
     
-    Serial.println(direction);
   
     // POST REQUEST
     char body[100];
@@ -111,9 +110,9 @@ void loop() {
     strcat(request_buffer, "\r\n"); //new line from header to body
     strcat(request_buffer, body); //body
     strcat(request_buffer, "\r\n"); //new line
-    // Serial.println(request_buffer);
+    Serial.println(request_buffer);
     do_http_request("608dev-2.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT, true);
-    // Serial.println(response_buffer);  //viewable in Serial Terminal
+    Serial.println(response_buffer);  //viewable in Serial Terminal
 
     // GET REQUEST
     strcpy(request_buffer, GET_URL);
@@ -121,7 +120,7 @@ void loop() {
     strcat(request_buffer, "\r\n");
   
     do_http_request("608dev-2.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, 1000, 0);
-    // Serial.println(response_buffer);
+    Serial.println(response_buffer);
     DynamicJsonDocument document(500);
     DeserializationError error = deserializeJson(document, response_buffer);
 
