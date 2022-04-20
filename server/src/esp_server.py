@@ -11,12 +11,21 @@ def request_handler(request):
 
     elif request['method'] == 'POST':
         dir = str(request['form']['dir'])
+        dir_str = ""
+        if dir[0] == '1':
+            dir_str += "left, "
+        if dir[1] == '1':
+            dir_str += "right, "
+        if dir[2] == '1':
+            dir_str += "up, "
+        if dir[3] == '1':
+            dir_str += "down, "
+        if len(dir_str) == 0:
+            dir_str = "no move"
         score = get_score()
-        set_data(dir, score)
+        set_data(dir_str, score)
 
-        # return {'score': int(score)}
-        # set_data(dir, score)
-        return {'dir': str(dir),
+        return {'dir': str(dir_str),
                 'score': int(score)}
 
     else:
