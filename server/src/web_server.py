@@ -6,6 +6,9 @@ db = '/var/jail/home/team27/beatsaber.db'
 def request_handler(request):
     if request['method'] == 'GET':
         (dir, score) = get_data()
+        if 'js' in request['args']:
+            return {'dir': str(dir),
+                    'score': int(score)}
         return f'''
             <!DOCTYPE html>
             <html>
