@@ -4,41 +4,46 @@
 
 MPU6050 imu;
 
-float ang_vel  = 0;  //used for holding the magnitude of acceleration
-float ang_pos = 0;
+//angle of rotation around x axis
+float ang_velx  = 0;  
+float ang_vely = 0;
+float ang_x = 0;
+float ang_y = 0;
 
+//timer stuff, DT is total loop time, must be set for functions to work properly
 const int DT = 50;
 uint32_t primary_timer;
-uint32_t swipe_timer;
 
+//buttons
 const int BUTTON1 = 45;
 uint8_t button1state;
-
 const int BUTTON2 = 39;
 uint8_t button2state;
 
-float y_drift,z_drift, ang_drift;
+//variable to hold drift values
+float y_drift,z_drift, ang_driftx, ang_drifty;
 
+//simple struct
 struct vector {
-  float y, z;
+  float x, y, z;
 };
 
+//vectors
 struct vector gravity;
 struct vector accel_real;
 struct vector vel_real;
 struct vector pos_real;
 
-float start_altitude;
-
+//will contain direction of most recent motion "0100" 
 char direction[5];
 
+//for printing stuff
 char output[100];
 
 void setup() {
   //set up serial monitor
   Serial.begin(115200);
   while(!Serial);
-
 
   //set up imu
   if (imu.setupIMU(1)) {
@@ -64,11 +69,13 @@ void setup() {
 void loop() {
 
   getAngle();
-  ang_pos-=ang_drift;
+  ang_x-=ang_driftx;
+  ang_y-= ang_drifty;
 
   calcAccel();
   updateButton1();
   if (button1state ==0){
+    //if essentially still, recalculate angle
     imu.readAccelData(imu.accelCount);
     float x = imu.accelCount[0] * imu.aRes; 
     float y = imu.accelCount[1] * imu.aRes; 
@@ -78,20 +85,22 @@ void loop() {
     }
   }
   else if (button1state==1){
+    //button just pushed, reset pos and vel vectors
     pos_real.y=0;
     pos_real.z=0;
     vel_real.y=0;
     vel_real.z=0;
-    //start_altitude = bmp.readAltitude();
-    swipe_timer=millis();
   } else if(button1state==2){
+    //while button held keep updating position
     calcPos();
     pos_real.y-=y_drift;
     pos_real.z-=z_drift;
   } else if (button1state==3){
+    //when button released determine direction of motion
     chooseDirection();
   }
 
+  // button 2 can be used to reinitialize
   updateButton2();
   if(button2state == 3){
     Serial.println("reinitializing");
