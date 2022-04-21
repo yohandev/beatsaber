@@ -23,9 +23,9 @@ def request_handler(request):
         if len(dir_str) == 0:
             dir_str = "no move"
         score = get_score()
-        set_data(dir_str, score)
+        set_data(dir, score)
 
-        return {'dir': str(dir_str),
+        return {'dir': str(dir),
                 'score': int(score)}
 
     else:

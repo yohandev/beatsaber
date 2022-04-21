@@ -7,8 +7,20 @@ def request_handler(request):
     if request['method'] == 'GET':
         (dir, score) = get_data()
         if 'js' in request['args']:
-            return {'dir': str(dir),
-                    'score': int(score)}
+            mapping = {
+                        "1000": 2,
+                        "0100": 3,
+                        "0010": 0,
+                        "0001": 1,
+                        "0000": 8,
+                        "1010": 4,
+                        "0110": 5,
+                        "1001": 6,
+                        "0101": 7
+                    }
+            return {'dir': int(mapping[dir])}
+            # return {'dir': str(dir),
+            #         'score': int(score)}
         return f'''
             <!DOCTYPE html>
             <html>
