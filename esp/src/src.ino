@@ -1,8 +1,11 @@
 #include <mpu6050_esp32.h>
 #include <math.h>
 #include <Wire.h>
+#include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
+#include <SPI.h>
 
 MPU6050 imu;
+TFT_eSPI tft = TFT_eSPI();
 
 //angle of rotation around x axis
 float ang_velx  = 0;  
@@ -19,6 +22,18 @@ const int BUTTON1 = 45;
 uint8_t button1state;
 const int BUTTON2 = 39;
 uint8_t button2state;
+
+//drawing stuff
+int draw_animationNumber = 0;
+int draw_counter = 0;
+
+//audio stuff
+uint8_t AUDIO_TRANSDUCER = 14;
+uint8_t AUDIO_PWM = 0;
+int old_note = 0;
+
+//score
+int score = 0;
 
 //variable to hold drift values
 float y_drift,z_drift, ang_driftx, ang_drifty;
@@ -44,6 +59,17 @@ void setup() {
   //set up serial monitor
   Serial.begin(115200);
   while(!Serial);
+
+  //setup tft 
+  tft.init();
+  tft.setRotation(2);
+  tft.setTextSize(1);
+
+  //set up audio
+  pinMode(AUDIO_TRANSDUCER, OUTPUT);
+  ledcSetup(AUDIO_PWM, 200, 12);//12 bits of PWM precision
+  ledcWrite(AUDIO_PWM, 0); //0 is a 0% duty cycle for the NFET
+  ledcAttachPin(AUDIO_TRANSDUCER, AUDIO_PWM);
 
   //set up imu
   if (imu.setupIMU(1)) {
@@ -98,6 +124,12 @@ void loop() {
   } else if (button1state==3){
     //when button released determine direction of motion
     chooseDirection();
+    //this is just for demo purposes,  should actually be determined by the response from server
+    draw_animationNumber = rand()%2+1;
+    tft.fillScreen(TFT_BLACK);
+    if (draw_animationNumber==1){
+      score+=1;
+    }
   }
 
   // button 2 can be used to reinitialize
@@ -107,7 +139,14 @@ void loop() {
     initializeOrientation();
     calculateDrift();
   }
+
+  //response animation and sounds
+  make_sound();
+  draw_miss();
+  draw_hit();
+  draw_score();
    
+  Serial.println(millis()-primary_timer);
   while(millis()-primary_timer<DT);
   primary_timer = millis();
   
