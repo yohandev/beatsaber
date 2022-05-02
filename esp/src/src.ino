@@ -3,19 +3,47 @@
 #include <Wire.h>
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <SPI.h>
+#include <Arduino.h>
+#include "timer.h"
+#include "peer.h"
+#include "imu.h"
+#include "num.h"
 
-MPU6050 imu;
-TFT_eSPI tft = TFT_eSPI();
+// #define RECV
 
-//angle of rotation around x axis
-float ang_velx  = 0;  
-float ang_vely = 0;
-float ang_x = 0;
-float ang_y = 0;
+#if defined RECV
+void setup() {
+    // Website is configured for 115200 bps
+    Serial.begin(115200);
 
-//timer stuff, DT is total loop time, must be set for functions to work properly
+    // Await serial
+    while (!Serial);
+
+    // Place this in ADDR below
+    Serial.println(Peer::addr());
+
+    // Relay every message received
+    Peer::recv(+[](const u8* _, const u8* buf, int len) {
+        Serial.write(buf, len);
+
+    });
+}
+
+void loop() { /* It's empty here... */ }
+
+#else
+
+const u8 ADDR[] = { 0x7C, 0xDF, 0xA1, 0x0F, 0x07, 0x66 };
+
 const int DT = 50;
-uint32_t primary_timer;
+Timer timer(DT);    // Serial write timer
+Imu imu;            // MPU6050
+
+Peer peer(ADDR);    // Peer networking
+
+
+//MPU6050 imu;
+TFT_eSPI tft = TFT_eSPI();
 
 //buttons
 const int BUTTON1 = 45;
@@ -35,22 +63,13 @@ int old_note = 0;
 //score
 int score = 0;
 
-//variable to hold drift values
-float y_drift,z_drift, ang_driftx, ang_drifty;
+vec3 ang;           // current angle (integrated)
+vec3 acc;           // acceleration rotated with gravity removed
+vec3 gravity;       // gravity vector
+vec3 vel;           // velocity integrated from acc
+vec3 pos;           // position integrated from vel
 
-//simple struct
-struct vector {
-  float x, y, z;
-};
-
-//vectors
-struct vector gravity;
-struct vector accel_real;
-struct vector vel_real;
-struct vector pos_real;
-
-//will contain direction of most recent motion "0100" 
-char direction[5];
+int direction;
 
 //for printing stuff
 char output[100];
@@ -71,85 +90,76 @@ void setup() {
   ledcWrite(AUDIO_PWM, 0); //0 is a 0% duty cycle for the NFET
   ledcAttachPin(AUDIO_TRANSDUCER, AUDIO_PWM);
 
+  // start peer
+  peer.begin();
+
   //set up imu
-  if (imu.setupIMU(1)) {
-    Serial.println("IMU Connected!");
-  } else {
-    Serial.println("IMU Not Connected :/");
-    Serial.println("Restarting");
-    ESP.restart(); // restart the ESP (proper way)
-  }
+  imu.begin();
+  gravity = imu.poll().get_acc();
+  sprintf(output, "%f, %f, %f", gravity.x, gravity.y, gravity.z);
+  Serial.println(output);
+  imu.calibrate(10, DT, gravity);
 
   //buttons
   delay(100);
   pinMode(BUTTON1, INPUT_PULLUP);
   pinMode(BUTTON2, INPUT_PULLUP);
   
-  // remote should be flat for this
-  initializeOrientation();
-  calculateDrift();
-  
   Serial.println("initialization complete");
 }
 
 void loop() {
-
-  getAngle();
-  ang_x-=ang_driftx;
-  ang_y-= ang_drifty;
-
-  calcAccel();
-  updateButton1();
-  if (button1state ==0){
-    //if essentially still, recalculate angle
-    imu.readAccelData(imu.accelCount);
-    float x = imu.accelCount[0] * imu.aRes; 
-    float y = imu.accelCount[1] * imu.aRes; 
-    float z = imu.accelCount[2] * imu.aRes;
-    if (abs(sqrt(x*x+y*y+z*z)-1.08)<0.01){
-      resetOrientation();
+  if(timer.poll()){
+    //integrate for angle
+    getAngle();
+    //rotates accelation based on angle
+    calcAccel();
+    updateButton1();
+    if (button1state ==0){
+      //if essentially still, recalculate angle
+      vec3 curr_acc = imu.accel();
+      if (abs(sqrt(curr_acc.x*curr_acc.x+curr_acc.y*curr_acc.y+curr_acc.z*curr_acc.z)-10.5)<0.1){
+        resetOrientation();
+      }
     }
-  }
-  else if (button1state==1){
-    //button just pushed, reset pos and vel vectors
-    pos_real.y=0;
-    pos_real.z=0;
-    vel_real.y=0;
-    vel_real.z=0;
-  } else if(button1state==2){
-    //while button held keep updating position
-    calcPos();
-    pos_real.y-=y_drift;
-    pos_real.z-=z_drift;
-  } else if (button1state==3){
-    //when button released determine direction of motion
-    chooseDirection();
-    //this is just for demo purposes,  should actually be determined by the response from server
-    draw_animationNumber = rand()%2+1;
-    tft.fillScreen(TFT_BLACK);
-    if (draw_animationNumber==1){
-      score+=1;
+    else if (button1state==1){
+      //button just pushed, reset pos and vel vectors
+      pos = {.x=0, .y = 0, .z = 0};
+      vel = {.x=0, .y = 0, .z = 0};
+    } else if(button1state==2){
+      //while button held keep updating position
+      calcPos();
+    } else if (button1state==3){
+      //when button released determine direction of motion
+      chooseDirection();
+      //this is just for demo purposes,  should actually be determined by the response from server
+      draw_animationNumber = rand()%2+1;
+      tft.fillScreen(TFT_BLACK);
+      if (draw_animationNumber==1){
+        score+=1;
+      }
     }
-  }
 
-  // button 2 can be used to reinitialize
-  updateButton2();
-  if(button2state == 3){
-    Serial.println("reinitializing");
-    initializeOrientation();
-    calculateDrift();
-  }
+    // button 2 can be used to reinitialize
+    updateButton2();
+    if(button2state == 3){
+      Serial.println("reinitializing");
+      gravity = imu.poll().get_acc();
+      imu.calibrate(10, DT, gravity);
+      sprintf(output, "%f, %f, %f", gravity.x, gravity.y, gravity.z);
+      Serial.println(output);
+      
+    }
 
-  //response animation and sounds
-  make_sound();
-  draw_miss();
-  draw_hit();
-  draw_score();
-   
-  Serial.println(millis()-primary_timer);
-  while(millis()-primary_timer<DT);
-  primary_timer = millis();
-  
+    //response animation and sounds
+    make_sound();
+    draw_miss();
+    draw_hit();
+    draw_score();
+    
+    peer.send((u8*)&ang, sizeof(vec3));
+    //Serial.write((u8*)&ang, sizeof(vec3));
+  }
 }
 
 
@@ -178,4 +188,5 @@ void updateButton2(){
     button2state =0;
   }
 }
+#endif
 

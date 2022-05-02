@@ -5,5 +5,8 @@ const opt = {
     bundle: true,
     minify: true,
     sourcemap: true,
+    loader: {
+        '.obj': 'text',
+    }
 };
 require('esbuild').build(opt);
