@@ -3,16 +3,16 @@ void chooseDirection(){
   */
     if(pos.y>0.1 && pos.z>0.1 && abs(pos.y-pos.z)<0.15){
       Serial.println("left and up");
-      direction = 7;
+      direction = 4;
     }else if(pos.y<-0.1 && pos.z>0.1 && abs(abs(pos.y)-pos.z)<0.15){
       Serial.println("right and up");
-      direction = 6;
+      direction = 5;
     } else if(pos.y>0.1 && pos.z<-0.1 && abs(pos.y-abs(pos.z))<0.15){
       Serial.println("left and down");
-      direction = 4;
+      direction = 7;
     } else if(pos.y<-0.1 && pos.z<-0.1 && abs(pos.y-pos.z)<0.15){
       Serial.println("right and down");
-      direction = 5;
+      direction = 6;
     }else if(abs(pos.y)>abs(pos.z) && pos.y>0.1){
       Serial.println("left");
       direction = 2;
@@ -21,10 +21,10 @@ void chooseDirection(){
       direction = 3;
     }else if(pos.z>0.1){
       Serial.println("up");
-      direction = 1;
+      direction = 0;
     }else if (pos.z<-0.1){
       Serial.println("down");
-      direction = 0;
+      direction = 1;
     } else{
       Serial.println("no movement");
       direction = 8;

@@ -8,8 +8,10 @@
 #include "peer.h"
 #include "imu.h"
 #include "num.h"
+#include "message.h"
 
 // #define RECV
+// #define RIGHT
 
 #if defined RECV
 void setup() {
@@ -70,6 +72,13 @@ vec3 vel;           // velocity integrated from acc
 vec3 pos;           // position integrated from vel
 
 int direction;
+
+bool isLeft;
+#if defined RIGHT
+isLeft = false;
+#else
+isLeft = true;
+#endif
 
 //for printing stuff
 char output[100];
@@ -132,6 +141,11 @@ void loop() {
     } else if (button1state==3){
       //when button released determine direction of motion
       chooseDirection();
+      message mess;
+      mess.ang = ang;
+      mess.direction = direction;
+      mess.isLeft = isLeft;
+      peer.send((u8*)&mess, sizeof(message));
       //this is just for demo purposes,  should actually be determined by the response from server
       draw_animationNumber = rand()%2+1;
       tft.fillScreen(TFT_BLACK);
@@ -157,7 +171,11 @@ void loop() {
     draw_hit();
     draw_score();
     
-    peer.send((u8*)&ang, sizeof(vec3));
+    message mess;
+    mess.ang = ang;
+    mess.direction = -1;
+    mess.isLeft = isLeft;
+    peer.send((u8*)&mess, sizeof(message));
     //Serial.write((u8*)&ang, sizeof(vec3));
   }
 }
