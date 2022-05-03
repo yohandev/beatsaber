@@ -1,6 +1,5 @@
-#include <mpu6050_esp32.h>
+
 #include <math.h>
-#include <Wire.h>
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <SPI.h>
 #include <Arduino.h>
@@ -11,7 +10,8 @@
 #include "message.h"
 
 // #define RECV
-// #define RIGHT
+int isLeft = 1;
+//using int because will be padded anyways
 
 #if defined RECV
 void setup() {
@@ -49,9 +49,9 @@ TFT_eSPI tft = TFT_eSPI();
 
 //buttons
 const int BUTTON1 = 45;
-uint8_t button1state;
+uint8_t button1state = 0;
 const int BUTTON2 = 39;
-uint8_t button2state;
+uint8_t button2state = 0;
 
 //drawing stuff
 int draw_animationNumber = 0;
@@ -71,14 +71,11 @@ vec3 gravity;       // gravity vector
 vec3 vel;           // velocity integrated from acc
 vec3 pos;           // position integrated from vel
 
-int direction;
+int direction = 0;
 
-bool isLeft;
-#if defined RIGHT
-isLeft = false;
-#else
-isLeft = true;
-#endif
+
+
+
 
 //for printing stuff
 char output[100];

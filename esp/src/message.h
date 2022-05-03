@@ -1,7 +1,9 @@
-#include num.h
+#pragma once
+
+#include "num.h"
 
 struct message{
   vec3 ang;
   int direction;
-  bool isLeft;
-}
+  int isLeft;
+};
