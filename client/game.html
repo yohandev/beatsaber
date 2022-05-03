@@ -151,6 +151,7 @@
         // Download level instantly...
         const info = JSON.parse(`<info.dat>`)
         const level = JSON.parse(`<difficulty.dat>`)
+        const song = new Audio('data:audio/ogg;base64,<song.egg>')
 
         // Initialize three.js
         import * as THREE from 'three'
@@ -249,8 +250,10 @@
                     scene.remove(note.obj)
                 }
             }
+            // Start
             requestAnimationFrame(tick)
             reader.read().then(input)
+            song.play()
         })
     </script>
 </body>
