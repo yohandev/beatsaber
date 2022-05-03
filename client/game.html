@@ -149,8 +149,8 @@
     <!-- GAME ENGINE -->
     <script type="module">
         // Download level instantly...
-        const info = $.getJSON("https://gist.githubusercontent.com/yohandev/66ef489127b12c9d82f767d1d4b9a7be/raw/6fc235d2af98109eceab425deebc6fec0a49c815/info.json").promise()
-        const level = $.getJSON("https://gist.githubusercontent.com/yohandev/f8423c1a1e990e61e2a26c83c112268c/raw/3c1a3198e3e63f885338dfd8caafb0a950690d4d/level.json").promise()
+        const info = JSON.parse(`<info.dat>`)
+        const level = JSON.parse(`<difficulty.dat>`)
 
         // Initialize three.js
         import * as THREE from 'three'

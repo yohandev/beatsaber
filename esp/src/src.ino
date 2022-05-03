@@ -5,7 +5,7 @@
 #include "imu.h"
 #include "num.h"
 
-// #define RECV // Uncomment this line to upload the receiver code
+#define RECV // Uncomment this line to upload the receiver code
 
 #if defined RECV
 void setup() {
@@ -19,7 +19,7 @@ void setup() {
     Serial.println(Peer::addr());
 
     // Relay every message received
-    Peer::recv(+[](const u8* _, const u8* buf, int len) {
+    Peer::recv(+[](const u8* mac, const u8* buf, int len) {
         Serial.write(buf, len);
     });
 }
