@@ -1,39 +1,41 @@
+#if defined RECV
+#else
 void chooseDirection(){
   /* at end direction integer will contain information corresponding to a direction
   */
-    if(pos.y>0.1 && pos.z>0.1 && abs(pos.y-pos.z)<0.15){
-      Serial.println("left and up");
+    if(pos.x>0.1 && pos.z>0.1 && abs(pos.x-pos.z)<0.2){
+      //Serial.println("left and up");
       direction = 4;
-    }else if(pos.y<-0.1 && pos.z>0.1 && abs(abs(pos.y)-pos.z)<0.15){
-      Serial.println("right and up");
+    }else if(pos.x<-0.1 && pos.z>0.1 && abs(abs(pos.x)-pos.z)<0.2){
+      //Serial.println("right and up");
       direction = 5;
-    } else if(pos.y>0.1 && pos.z<-0.1 && abs(pos.y-abs(pos.z))<0.15){
-      Serial.println("left and down");
+    } else if(pos.x>0.1 && pos.z<-0.1 && abs(pos.x-abs(pos.z))<0.2){
+      //Serial.println("left and down");
       direction = 7;
-    } else if(pos.y<-0.1 && pos.z<-0.1 && abs(pos.y-pos.z)<0.15){
-      Serial.println("right and down");
+    } else if(pos.x<-0.1 && pos.z<-0.1 && abs(pos.x-pos.z)<0.2){
+      //Serial.println("right and down");
       direction = 6;
-    }else if(abs(pos.y)>abs(pos.z) && pos.y>0.1){
-      Serial.println("left");
+    }else if(abs(pos.x)>abs(pos.z) && pos.x>0.1){
+      //Serial.println("left");
       direction = 2;
-    }else if (abs(pos.y)>abs(pos.z) && pos.y<-0.1){
-      Serial.println("right");
+    }else if (abs(pos.x)>abs(pos.z) && pos.x<-0.1){
+      //Serial.println("right");
       direction = 3;
     }else if(pos.z>0.1){
-      Serial.println("up");
+      //Serial.println("up");
       direction = 0;
     }else if (pos.z<-0.1){
-      Serial.println("down");
+      //Serial.println("down");
       direction = 1;
     } else{
-      Serial.println("no movement");
+      //Serial.println("no movement");
       direction = 8;
     }
 
 
 
-   sprintf(output, "z: %4.6f, y: %4.6f", pos.z, pos.y);
-  Serial.println(output);
+   //sprintf(output, "z: %4.6f, y: %4.6f", pos.z, pos.y);
+  //Serial.println(output);
   //Serial.println(direction);
 }
 
@@ -41,7 +43,7 @@ void calcAccel(){
   //sets accel_real to correct direction of motion removing gravity
   vec3 curr_acc = imu.accel();
   vec3 accel_rotated = rotateVec(&curr_acc);
-  acc.x =0;
+  acc.x = accel_rotated.x - gravity.x;
   acc.y = accel_rotated.y - gravity.y;
   acc.z = accel_rotated.z - gravity.z;
 }
@@ -83,3 +85,5 @@ void integrateVec(vec3 * vec, vec3 * total){
   total->y = total->y+ 0.001*DT*vec->y;
   total->z = total->z+ 0.001*DT*vec->z;
 }
+
+#endif

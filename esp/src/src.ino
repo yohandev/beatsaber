@@ -139,10 +139,13 @@ void loop() {
       //when button released determine direction of motion
       chooseDirection();
       message mess;
-      mess.ang = ang;
+      mess.ang.x = -ang.x-3.14*0.5;
+      mess.ang.y = ang.y;
+      mess.ang.z = ang.z;
       mess.direction = direction;
       mess.isLeft = isLeft;
       peer.send((u8*)&mess, sizeof(message));
+      Serial.write((u8*)&mess, sizeof(message));
       //this is just for demo purposes,  should actually be determined by the response from server
       draw_animationNumber = rand()%2+1;
       tft.fillScreen(TFT_BLACK);
@@ -169,11 +172,13 @@ void loop() {
     draw_score();
     
     message mess;
-    mess.ang = ang;
+    mess.ang.x = -ang.x-3.14*0.5;
+    mess.ang.y = ang.y;
+    mess.ang.z = ang.z;
     mess.direction = -1;
     mess.isLeft = isLeft;
     peer.send((u8*)&mess, sizeof(message));
-    //Serial.write((u8*)&ang, sizeof(vec3));
+    Serial.write((u8*)&mess, sizeof(message));
   }
 }
 

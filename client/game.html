@@ -270,12 +270,23 @@
             return;
           }
           // Set rotation
-          lsaber.rotation.set(...new Float64Array(value.buffer, 0, 3));
-          const direction = new Int32Array(value.buffer, 24, 1)[0];
-          const isLeft = new Int32Array(value.buffer, 28, 1)[0]; //1 implies left, 0 implies right
 
-          // Heading vector
-          const v = new THREE.Vector3(0, 1, 0).applyEuler(lsaber.rotation);
+          const direction = new Int32Array(value.buffer, 24, 1)[0];
+          if (direction != -1) {
+            console.log(direction);
+          }
+          const isLeft = new Int32Array(value.buffer, 28, 1)[0]; //1 implies left, 0 implies right
+          var v;
+          if (isLeft) {
+            lsaber.rotation.set(...new Float64Array(value.buffer, 0, 3));
+            // Heading vector
+            v = new THREE.Vector3(0, 1, 0).applyEuler(lsaber.rotation);
+          } else {
+            rsaber.rotation.set(...new Float64Array(value.buffer, 0, 3));
+            // Heading vector
+            v = new THREE.Vector3(0, 1, 0).applyEuler(rsaber.rotation);
+          }
+
           heading.setDirection(v);
           // Calculate hits
           for (const note of notes.hit(time, v.toArray())) {

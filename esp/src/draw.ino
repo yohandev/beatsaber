@@ -1,3 +1,5 @@
+#if defined RECV
+#else
 void make_sound(){
   
   if (draw_animationNumber==1 && old_note!=493 && draw_counter<7){
@@ -91,3 +93,5 @@ void draw_miss(){
     
   }
 }
+
+#endif
