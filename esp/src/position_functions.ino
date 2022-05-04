@@ -1,126 +1,89 @@
+#if defined RECV
+#else
 void chooseDirection(){
-  memset(direction, '0', 4);
-  //if (abs(pos_real.y)>abs(pos_real.z)){
-    int count = 0;    
-    if(pos_real.y>0.01){
-      direction[0]='1';
-      direction[1]='0';
-      count++;
-    }else if (pos_real.y<-0.01){
-      direction[0]='0';
-      direction[1]='1';
-      count++;
+  /* at end direction integer will contain information corresponding to a direction
+  */
+    if(pos.x>0.1 && pos.z>0.1 && abs(pos.x-pos.z)<0.2){
+      //Serial.println("left and up");
+      direction = 4;
+    }else if(pos.x<-0.1 && pos.z>0.1 && abs(abs(pos.x)-pos.z)<0.2){
+      //Serial.println("right and up");
+      direction = 5;
+    } else if(pos.x>0.1 && pos.z<-0.1 && abs(pos.x-abs(pos.z))<0.2){
+      //Serial.println("left and down");
+      direction = 7;
+    } else if(pos.x<-0.1 && pos.z<-0.1 && abs(pos.x-pos.z)<0.2){
+      //Serial.println("right and down");
+      direction = 6;
+    }else if(abs(pos.x)>abs(pos.z) && pos.x>0.1){
+      //Serial.println("left");
+      direction = 2;
+    }else if (abs(pos.x)>abs(pos.z) && pos.x<-0.1){
+      //Serial.println("right");
+      direction = 3;
+    }else if(pos.z>0.1){
+      //Serial.println("up");
+      direction = 0;
+    }else if (pos.z<-0.1){
+      //Serial.println("down");
+      direction = 1;
+    } else{
+      //Serial.println("no movement");
+      direction = 8;
     }
-  //} else {
-    if(pos_real.z>0.01){
-      direction[2]='1';
-      direction[3]='0';
-      count++;
-    }else if (pos_real.z<-0.01){
-      direction[2]='0';
-      direction[3]='1';
-      count++;
-    }
-
-  if (direction[0]=='1'){
-    Serial.print("left");
-  } else if (direction[1]=='1'){
-    Serial.print("right");
-  } 
-  if ((direction[0]=='1' || direction[1]=='1') && count==1){
-    Serial.println();
-  } else if (count==2){
-    Serial.print(" or ");
-  }
-  if (direction[2]=='1'){
-    Serial.println("up");
-  } else if (direction[3]=='1'){
-    Serial.println("down");
-  } 
-  if(count==0){
-Serial.println("no movement"); 
-  }
-
-  //}
-  sprintf(output, "z: %4.6f, y: %4.6f", pos_real.z, pos_real.y);
-  Serial.println(output);
-  Serial.println(direction);
 
 
+
+   //sprintf(output, "z: %4.6f, y: %4.6f", pos.z, pos.y);
+  //Serial.println(output);
+  //Serial.println(direction);
 }
 
 void calcAccel(){
-  struct vector accel = getAccel();
-  struct vector accel_rotated = rotateVec(accel);
-
-  accel_real.y = accel_rotated.y-gravity.y;
-  accel_real.z = accel_rotated.z - gravity.z;
+  //sets accel_real to correct direction of motion removing gravity
+  vec3 curr_acc = imu.accel();
+  vec3 accel_rotated = rotateVec(&curr_acc);
+  acc.x = accel_rotated.x - gravity.x;
+  acc.y = accel_rotated.y - gravity.y;
+  acc.z = accel_rotated.z - gravity.z;
 }
 
 void calcPos(){
-  integrateVec(accel_real, &vel_real);
-  integrateVec(vel_real, &pos_real);
+  // integrates accel real to get pos_real
+  integrateVec(&acc, &vel);
+  integrateVec(&vel, &pos);
 }
 
 void getAngle(){
-  imu.readGyroData(imu.gyroCount);
-  ang_vel = imu.gyroCount[0] * imu.gRes;
-  ang_pos= ang_pos+ 0.001*DT*ang_vel ;
-}
-
-void initializeOrientation(){
-  ang_pos = 0;
-  imu.readAccelData(imu.accelCount);
-  gravity.y = imu.accelCount[1] * imu.aRes; 
-  gravity.z = imu.accelCount[2] * imu.aRes;
+  //integrates angular velocity to get angle
+  ang+= imu.poll().gyro() * (DT / 1000.0);
 }
 
 void resetOrientation(){
-  struct vector accel = getAccel();
-  ang_pos = 180.0/3.1415*asin(accel.y/sqrt(accel.y*accel.y+accel.z*accel.z));
+  //calculate current angle based on gravity, assume not moving
+  vec3 curr_acc = imu.poll().get_acc();
+  ang.x = asin(curr_acc.y/sqrt(curr_acc.y*curr_acc.y+curr_acc.z*curr_acc.z));
+  ang.y = asin(curr_acc.x/sqrt(curr_acc.x*curr_acc.x+curr_acc.z*curr_acc.z));
+
 }
 
-void calculateDrift(){
-  pos_real.y=0; 
-  pos_real.z=0; 
-  vel_real.z =0;
-  vel_real.y = 0;
-  ang_pos=0;
+vec3 rotateVec(vec3 * vec){
+  // rotates vector around x axis based on the angle of the remote
+  vec3 vec_new;
+  vec_new.x = cos(ang.y)*vec->x - sin(ang.y)* vec->z;
+  vec_new.z = sin(ang.y)*vec->x + cos(ang.y)* vec->z;
 
-  for (int i=0;i<10; i++){
-    getAngle();
-    calcAccel();
-    calcPos();
-    while(millis()-primary_timer<DT);
-    primary_timer=millis();
-  }
-  y_drift = (pos_real.y)/10.0;
-  z_drift = (pos_real.z)/10.0;
-  ang_drift = (ang_pos)/10.0;
-  pos_real.y=0; 
-  pos_real.z=0; 
-  vel_real.z =0;
-  vel_real.y = 0;
-  ang_pos=0;
-    
-}
+  vec_new.y = cos(ang.x)*vec->y - sin(ang.x)* vec_new.z;
+  vec_new.z = sin(ang.x)*vec->y + cos(ang.x)* vec_new.z;
 
-struct vector getAccel(){
-  imu.readAccelData(imu.accelCount);
-  struct vector accel;
-  accel.y = imu.accelCount[1] * imu.aRes; 
-  accel.z = imu.accelCount[2] * imu.aRes;
-  return accel;
-}
-
-struct vector rotateVec(struct vector vec){
-  struct vector vec_new;
-  vec_new.y = cos(ang_pos*3.14/180)*vec.y - sin(ang_pos*3.14/180)* vec.z;
-  vec_new.z = sin(ang_pos*3.14/180)*vec.y + cos(ang_pos*3.14/180)* vec.z;
   return vec_new;
 }
 
-void integrateVec(struct vector vec, struct vector* total){
-  total->y = total->y+ 0.001*DT*vec.y;
-  total->z = total->z+ 0.001*DT*vec.z;
+void integrateVec(vec3 * vec, vec3 * total){
+  // integrates vector struct
+  total->x = total->x+ 0.001*DT*vec->x;
+  total->y = total->y+ 0.001*DT*vec->y;
+  total->z = total->z+ 0.001*DT*vec->z;
 }
+
+#endif

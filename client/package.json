@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "esbuild": "^0.14.36",
+    "postprocessing": "^6.26.3",
     "three": "^0.139.2"
   }
 }
