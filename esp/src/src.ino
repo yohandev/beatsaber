@@ -160,6 +160,7 @@ void loop() {
       Serial.println("reinitializing");
       gravity = imu.poll().get_acc();
       imu.calibrate(10, DT, gravity);
+      ang = {.x=0, .y = 0, .z = 0};
       sprintf(output, "%f, %f, %f", gravity.x, gravity.y, gravity.z);
       Serial.println(output);
       
