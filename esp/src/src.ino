@@ -25,7 +25,7 @@ void setup() {
     Serial.println(Peer::addr());
 
     // Relay every message received
-    Peer::recv(+[](const u8* _, const u8* buf, int len) {
+    Peer::recv(+[](const u8* mac, const u8* buf, int len) {
         Serial.write(buf, len);
 
     });

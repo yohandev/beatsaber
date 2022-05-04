@@ -1,18 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <title>Beat Saber</title>
 
     <!-- DEPENDENCIES -->
-    <script
-      src="https://code.jquery.com/jquery-3.6.0.min.js"
-      integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
-      crossorigin="anonymous"
-    ></script>
-    <script
-      async
-      src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"
-    ></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
     <script type="importmap">
       {
         "imports": {
@@ -20,282 +13,307 @@
         }
       }
     </script>
-  </head>
-  <body>
-    <button id="begin">Begin!</button>
+</head>
+<body>
+    <button id="begin">
+        Begin!
+    </button>
     <!-- BEAT SABER GAME LOGIC -->
     <script>
-      // A Beat Saber level(headless)
-      class Level {
-        // Parse `info.dat`, `level.dat` in JSON format
-        constructor(info, level) {
-          this.info = info; // Raw level metadata
-          this.level = level["_notes"]; // Raw level data
-          this.active = []; // Notes currently in level
-          this.inc = 0; // Index of next note to poll
-          this.start = null; // First time passed in
-          this.saber = null; // Last saber heading passed in
-        }
-
-        // Returns new notes to spawn for the given time, in seconds.
-        *next(time) {
-          // Convert to beats
-          time = this.time(time);
-          // Exhaust level data
-          while (this.inc < this.level.length) {
-            // Note is set to arrive 10 beats from now
-            if (this.level[this.inc]["_time"] <= time + 10) {
-              // Push & yield
-              yield (this.active[this.active.length] = new Level.Note(
-                this.level[this.inc++]
-              ));
-              // Wait until it's its turn
-            } else {
-              break;
+        // A Beat Saber level(headless)
+        class Level {
+            // Parse `info.dat`, `level.dat` in JSON format
+            constructor(info, level) {
+                this.info = info                    // Raw level metadata
+                this.level = level["_notes"]        // Raw level data
+                this.active = []                    // Notes currently in level
+                this.inc = 0                        // Index of next note to poll
+                this.start = null                   // First time passed in
+                this.saber = null                   // Last saber heading passed in
             }
-          }
-        }
 
-        // Takes time(in beats), current heading of the light saber(world space),
-        // yields all the notes that were destroyed.
-        // TODO manages points
-        *hit(time, saber) {
-          // Convert to beats
-          time = this.time(time);
-          // Reduced length of `this.active`
-          let i = 0;
-          for (const note of this.active) {
-            // 1. Box-ray intersection
-            //  >> For now, compare time
-            //  >> TODO actual bounding box computation
-            if (Math.abs(time - note.beat) < 2) {
-              // 2. Angle
-              if (note.angle_with(this.saber_vel(saber)) < 30) {
-                console.log("nice!");
-                // Destroy
-                yield note;
-                continue;
-              }
+            // Returns new notes to spawn for the given time, in seconds.
+            *next(time) {
+                // Convert to beats
+                time = this.time(time)
+                // Exhaust level data
+                while (this.inc < this.level.length) {
+                    // Note is set to arrive 10 beats from now
+                    if (this.level[this.inc]["_time"] <= time + 10) {
+                        // Push & yield
+                        yield (this.active[this.active.length] = new Level.Note(this.level[this.inc++]))
+                    // Wait until it's its turn
+                    } else {
+                        break;
+                    }
+                }
             }
-            // Stay alive
-            this.active[i++] = note;
-          }
-          // Remove destroyed notes
-          this.active.splice(i);
-        }
 
-        // Returns the time, in beats, given the time in seconds
-        time(t) {
-          // First poll
-          if (this.start === null) {
-            this.start = t;
-          }
-          // Convert to beats
-          return ((t - this.start) * this.bpm) / 60;
-        }
+            // Takes time(in beats), current heading of the light saber(world space),
+            // yields all the notes that were destroyed.
+            // TODO manages points
+            *hit(time, saber) {
+                // Convert to beats
+                time = this.time(time)
+                // Reduced length of `this.active`
+                let i = 0
+                for (const note of this.active) {
+                    // 1. Box-ray intersection
+                    //  >> For now, compare time
+                    //  >> TODO actual bounding box computation
+                    if (Math.abs(time - note.beat) < 2) {
+                        // 2. Angle
+                        if (note.angle_with(this.saber_vel(saber)) < 30) {
+                            console.log('nice!')
+                            // Destroy
+                            yield note
+                            continue
+                        }
+                    }
+                    // Stay alive
+                    this.active[i++] = note
+                }
+                // Remove destroyed notes
+                this.active.splice(i);
+            }
 
-        // Returns the velocity of the light saber, given its new heading
-        saber_vel(v) {
-          const last = this.saber ?? v;
-          const vel = [v[0] - last[0], v[1] - last[1], v[2] - last[2]];
+            // Returns the time, in beats, given the time in seconds
+            time(t) {
+                // First poll
+                if (this.start === null) {
+                    this.start = t
+                }
+                // Convert to beats
+                return (t - this.start) * this.bpm / 60
+            }
 
-          this.saber = v;
+            // Returns the velocity of the light saber, given its new heading
+            saber_vel(v) {
+                const last = this.saber ?? v
+                const vel = [v[0] - last[0], v[1] - last[1], v[2] - last[2]]
 
-          return vel;
-        }
+                this.saber = v
 
-        // Beats per minute of this level
-        get bpm() {
-          return this.info["_beatsPerMinute"];
-        }
-      }
-      // A Beat Saber note/block
-      Level.Note = class {
-        // Width of 3D model(world space)
-        static width = 2;
-        // Cut direction -> Z-axis rotation
-        static angle = {
-          0: 0,
-          1: 180,
-          2: 90,
-          3: 270,
-          4: 45,
-          5: 315,
-          6: 135,
-          7: 225,
-          8: 0,
-        };
-        // Cut direction -> Vector(world space)
-        static vector = {
-          0: [0, 1, 0],
-          1: [0, -1, 0],
-          2: [-1, 0, 0],
-          3: [1, 0, 0],
-          4: [-Math.SQRT1_2, Math.SQRT1_2, 0],
-          5: [Math.SQRT1_2, Math.SQRT1_2, 0],
-          6: [-Math.SQRT1_2, -Math.SQRT1_2, 0],
-          7: [Math.SQRT1_2, -Math.SQRT1_2, 0],
-          8: [0, 0, 0],
-        };
-        // Spacing between notes(m/beat)
-        static spacing = 9;
+                return vel
+            }
 
-        // Create a new note given its entry in `level.dat`
-        constructor(json) {
-          this.beat = json["_time"]; // Beat when reaches player
-          this.type = json["_type"]; // Type(0-3| red | blue | unused | bomb)
-          this.col = json["_lineLayer"]; // Column/vertical position(0-2| bottom -> top)
-          this.row = json["_lineIndex"]; // Row/horizontal position(0-3| left -> right)
-          this.dir = json["_cutDirection"]; // Cut direction(0-8| ↑ | ↓ | ← | → | ↖ | ↗ | ↙ | ↘ | • |)
-        }
+            // Beats per minute of this level
+            get bpm() { return this.info["_beatsPerMinute"] }
 
-        // Get the angle between this note's cut direction and a vector
-        angle_with(v) {
-          // Normalize
-          const n = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-          // Dot product
-          const dot = v[0] * this.v[0] + v[1] * this.v[1] + v[2] * this.v[2];
-          // Angle
-          return n > 0.05 ? (180 / Math.PI) * Math.acos(dot / n) : Infinity;
         }
+        // A Beat Saber note/block
+        Level.Note = class {
+            // Width of 3D model(world space)
+            static width = 2
+            // Cut direction -> Z-axis rotation
+            static angle = {
+                0: 0, 1: 180, 2: 90, 3: 270, 4: 45,
+                5: 315, 6: 135, 7: 225, 8: 0,
+            }
+            // Cut direction -> Vector(world space)
+            static vector = {
+                0: [0, 1, 0], 1: [0, -1, 0], 2: [-1, 0, 0],
+                3: [1, 0, 0], 4: [-Math.SQRT1_2, Math.SQRT1_2, 0], 5: [Math.SQRT1_2, Math.SQRT1_2, 0],
+                6: [-Math.SQRT1_2, -Math.SQRT1_2, 0], 7: [Math.SQRT1_2, -Math.SQRT1_2, 0], 8: [0, 0, 0],
+            }
+            // Spacing between notes(m/beat)
+            static spacing = 15
 
-        // Get this note's Z-axis rotation
-        get angle() {
-          return Level.Note.angle[this.dir];
+            // Create a new note given its entry in `level.dat`
+            constructor(json) {
+                this.beat = json['_time']           // Beat when reaches player
+                this.type = json['_type']           // Type(0-3| red | blue | unused | bomb)
+                this.col  = json['_lineLayer']      // Column/vertical position(0-2| bottom -> top)
+                this.row  = json['_lineIndex']      // Row/horizontal position(0-3| left -> right)
+                this.dir  = json['_cutDirection']   // Cut direction(0-8| ↑ | ↓ | ← | → | ↖ | ↗ | ↙ | ↘ | • |)
+            }
+
+            // Get the angle between this note's cut direction and a vector
+            angle_with(v) {
+                // Normalize
+                const n = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
+                // Dot product
+                const dot = v[0] * this.v[0] + v[1] * this.v[1] + v[2] * this.v[2]
+                // Angle
+                return n > 0.05 ? (180 / Math.PI) * Math.acos(dot / n) : Infinity
+            }
+
+            // Get this note's Z-axis rotation
+            get angle() { return Level.Note.angle[this.dir] }
+            // Get this note's cut direction vector(world space)
+            get v() { return Level.Note.vector[this.dir] }
+            // Get this note's Z-axis position
+            get pos() { return Level.Note.spacing * this.beat }
         }
-        // Get this note's cut direction vector(world space)
-        get v() {
-          return Level.Note.vector[this.dir];
-        }
-        // Get this note's Z-axis position
-        get pos() {
-          return Level.Note.spacing * this.beat;
-        }
-      };
     </script>
     <!-- GAME ENGINE -->
     <script type="module">
-      // Download level instantly...
-      const info = $.getJSON(
-        "https://gist.githubusercontent.com/yohandev/66ef489127b12c9d82f767d1d4b9a7be/raw/6fc235d2af98109eceab425deebc6fec0a49c815/info.json"
-      ).promise();
-      const level = $.getJSON(
-        "https://gist.githubusercontent.com/yohandev/f8423c1a1e990e61e2a26c83c112268c/raw/3c1a3198e3e63f885338dfd8caafb0a950690d4d/level.json"
-      ).promise();
+        // Download level instantly...
+        const info = JSON.parse(`<info.dat>`)
+        const level = JSON.parse(`<difficulty.dat>`)
+        const song = new Audio('data:audio/ogg;base64,<song.egg>')
 
-      // Initialize three.js
-      import * as THREE from "three";
+        // Initialize three.js
+        import * as THREE from 'three'
 
-      const w = $(window).width();
-      const h = $(window).height();
+        import { GLTFLoader } from 'https://unpkg.com/three@0.139.2/examples/jsm/loaders/GLTFLoader.js'
+        import { RGBELoader } from 'https://unpkg.com/three@0.139.2/examples/jsm/loaders/RGBELoader.js'
+       
+        import { EffectComposer } from 'https://unpkg.com/three@0.139.2/examples/jsm/postprocessing/EffectComposer.js';
+		import { RenderPass } from 'https://unpkg.com/three@0.139.2/examples/jsm/postprocessing/RenderPass.js';
+		import { UnrealBloomPass } from 'https://unpkg.com/three@0.139.2/examples/jsm/postprocessing/UnrealBloomPass.js';
 
-      const scene = new THREE.Scene();
-      const cam = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-      const gl = new THREE.WebGLRenderer();
 
-      const prefabs = {
-        note: new THREE.Mesh(
-          new THREE.ConeGeometry(),
-          new THREE.MeshBasicMaterial({ color: 0x00ffff })
-        ),
-        saber: new THREE.Mesh(
-          new THREE.BoxGeometry(0.25, 4, 0.25),
-          new THREE.MeshBasicMaterial({ color: 0xff0000 })
-        ),
-      };
-      const lsaber = prefabs["saber"].clone(true);
-      const rsaber = prefabs["saber"].clone(true);
-      const heading = new THREE.ArrowHelper(
-        new THREE.Vector3(), // Direction
-        new THREE.Vector3(-1, 0, -3), // Origin
-        4, // Length
-        0xffff00 // Color
-      );
+        const w = $(window).width()
+        const h = $(window).height()
 
-      lsaber.position.set(-1, 0, -3);
-      rsaber.position.set(+1, 0, -3);
+        const scene = new THREE.Scene()
+        const cam = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000)
+        const gl = new THREE.WebGLRenderer()
 
-      gl.setSize(w, h);
-      scene.add(cam);
-      cam.add(lsaber);
-      cam.add(rsaber);
-      cam.add(heading);
+        const rend = new RenderPass(scene, cam)
+        const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.75, 0.4, 0.85)
+        const composer = new EffectComposer(gl)
 
-      $("#begin").on("click", async () => {
-        // Hide button, show 3D
-        $("#begin").remove();
-        $("body").append(gl.domElement);
+        composer.setPixelRatio(window.devicePixelRatio)
+        composer.setSize(w, h)
+        composer.addPass(rend)
+        composer.addPass(bloom)
 
-        // Select serial port
-        const port = await navigator.serial.requestPort();
+        // Download game assets
+        const prefabs = {
+            'rnote': await (async () => {
+                const base64 = await $.get('https://608dev-2.net/sandbox/sc/team27/asset.py?path=rnote.glb')
+                const uri = `data:model/gltf-binary;base64,${base64}`
+                const gltf = new GLTFLoader()
 
-        // Start data transmission
-        await port.open({ baudRate: 115200 });
-        // Configure reader
-        const reader = port.readable.getReader();
+                return await gltf.loadAsync(uri).then(x => x.scene)
+            })(),
+            'bnote': await (async () => {
+                const base64 = await $.get('https://608dev-2.net/sandbox/sc/team27/asset.py?path=bnote.glb')
+                const uri = `data:model/gltf-binary;base64,${base64}`
+                const gltf = new GLTFLoader()
 
-        // Parse level data
-        const notes = new Level(await info, await level);
+                return await gltf.loadAsync(uri).then(x => x.scene)
+            })(),
+            'rsaber': await (async () => {
+                const base64 = await $.get('https://608dev-2.net/sandbox/sc/team27/asset.py?path=rsaber.glb')
+                const uri = `data:model/gltf-binary;base64,${base64}`
+                const gltf = new GLTFLoader()
 
-        let time = null;
-        const tick = (t) => {
-          requestAnimationFrame(tick);
-          // Spawn-in new notes
-          for (let note of notes.next((time = t / 1000))) {
-            // Attach three.js object
-            note.obj = prefabs["note"].clone(true);
-            // Position it in 3D space
-            note.obj.position.z = -note.pos;
-            note.obj.position.x = note.row;
-            note.obj.position.y = note.col;
-            note.obj.rotation.z = note.angle * (Math.PI / 180);
+                return await gltf.loadAsync(uri).then(x => x.scene)
+            })(),
+            'bsaber': await (async () => {
+                const base64 = await $.get('https://608dev-2.net/sandbox/sc/team27/asset.py?path=bsaber.glb')
+                const uri = `data:model/gltf-binary;base64,${base64}`
+                const gltf = new GLTFLoader()
 
-            scene.add(note.obj);
-          }
-          // Player position
-          cam.position.z = -notes.time(t / 1000) * Level.Note.spacing;
+                return await gltf.loadAsync(uri).then(x => x.scene)
+            })(),
+            'env': await (async () => {
+                const base64 = await $.get('https://608dev-2.net/sandbox/sc/team27/asset.py?path=env.hdr')
+                const uri = `data:image/hdr;base64,${base64}`
+                const hdr = new RGBELoader()
 
-          // Render
-          gl.render(scene, cam);
-        };
-        const input = ({ value, done }) => {
-          // Disconnected
-          if (done) return;
+                return await hdr.loadAsync(uri)
+            })(),
+        }
+        const lsaber = prefabs['rsaber']
+        const rsaber = prefabs['bsaber']
+        const heading = new THREE.ArrowHelper(
+            new THREE.Vector3(),            // Direction
+            new THREE.Vector3(-1, 0, -3),   // Origin
+            4,                              // Length
+            0xffff00,                       // Color
+        )
 
-          // Get next input
-          reader.read().then(input);
+        lsaber.position.set(-1, -1, -3)
+        rsaber.position.set(+1, -1, -3)
 
-          // f32 x3
-          if (!time || value.length != 32) {
-            return;
-          }
-          // Set rotation
+        const lit = {
+            'ambient': new THREE.AmbientLight(0xf0f0f0),
+            'direct': new THREE.PointLight(0xffffff, 0.7, 30),
+            'gentle': new THREE.PointLight(0xffffff, 0.2, 100),
+        }
+        lit['direct'].position.set(-3, 2, 0)
 
-          const direction = new Int32Array(value.buffer, 24, 1)[0];
-          if (direction != -1) {
-            console.log(direction);
-          }
-          const isLeft = new Int32Array(value.buffer, 28, 1)[0]; //1 implies left, 0 implies right
-          var v;
-          if (isLeft) {
-            lsaber.rotation.set(...new Float64Array(value.buffer, 0, 3));
-            // Heading vector
-            v = new THREE.Vector3(0, 1, 0).applyEuler(lsaber.rotation);
-          } else {
-            rsaber.rotation.set(...new Float64Array(value.buffer, 0, 3));
-            // Heading vector
-            v = new THREE.Vector3(0, 1, 0).applyEuler(rsaber.rotation);
-          }
+        prefabs['env'].mapping = THREE.EquirectangularReflectionMapping
+        scene.environment = prefabs['env']
 
-          heading.setDirection(v);
-          // Calculate hits
-          for (const note of notes.hit(time, v.toArray())) {
-            scene.remove(note.obj);
-          }
-        };
-        requestAnimationFrame(tick);
-        reader.read().then(input);
-      });
+        gl.setSize(w, h)
+        scene.add(cam)
+        scene.add(lit['ambient'])
+        cam.add(lsaber)
+        cam.add(rsaber)
+        cam.add(heading)
+        cam.add(lit['direct'])
+        cam.add(lit['gentle'])
+
+        $("#begin").on('click', async () => {
+            // Hide button, show 3D
+            $("#begin").remove()
+            $('body').append(gl.domElement)
+
+            // Select serial port
+            const port = await navigator.serial.requestPort();
+
+            // Start data transmission
+            await port.open({ baudRate: 115200 })
+            // Configure reader
+            const reader = port.readable.getReader()
+
+            // Parse level data
+            const notes = new Level(await info, await level)
+            
+            let time = null
+            const tick = (t) => {
+                requestAnimationFrame(tick)
+                // Spawn-in new notes
+                for (let note of notes.next(time = (t / 1000))) {
+                    // Attach three.js object
+                    note.obj = prefabs[note.type == 0 ? 'rnote' : 'bnote'].clone(true)
+                    // Position it in 3D space
+                    note.obj.position.z = -note.pos
+                    note.obj.position.x = note.row
+                    note.obj.position.y = note.col
+                    note.obj.rotation.z = note.angle * (Math.PI / 180)
+
+                    scene.add(note.obj)
+                }
+                // Player position
+                cam.position.z = -notes.time(t / 1000) * Level.Note.spacing
+
+                // Render
+                // gl.render(scene, cam)
+                composer.render()
+            }
+            const input = ({ value, done }) => {
+                // Disconnected
+                if (done) return
+
+                // Get next input
+                reader.read().then(input)
+
+                // f32 x3
+                if (!time || value.length != 24) {
+                    return
+                }
+                // Set rotation
+                lsaber.rotation.set(...new Float64Array(value.buffer, 0, 3))
+
+                // Heading vector
+                const v = new THREE.Vector3(0, 1, 0).applyEuler(lsaber.rotation)
+                heading.setDirection(v)
+                // Calculate hits
+                for (const note of notes.hit(time, v.toArray())) {
+                    scene.remove(note.obj)
+                }
+            }
+            // Start
+            requestAnimationFrame(tick)
+            reader.read().then(input)
+            song.play()
+        })
     </script>
-  </body>
+</body>
 </html>
