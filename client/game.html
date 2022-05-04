@@ -117,7 +117,7 @@
                 6: [-Math.SQRT1_2, -Math.SQRT1_2, 0], 7: [Math.SQRT1_2, -Math.SQRT1_2, 0], 8: [0, 0, 0],
             }
             // Spacing between notes(m/beat)
-            static spacing = 9
+            static spacing = 15
 
             // Create a new note given its entry in `level.dat`
             constructor(json) {
@@ -155,26 +155,71 @@
 
         // Initialize three.js
         import * as THREE from 'three'
-        
+
+        import { GLTFLoader } from 'https://unpkg.com/three@0.139.2/examples/jsm/loaders/GLTFLoader.js'
+        import { RGBELoader } from 'https://unpkg.com/three@0.139.2/examples/jsm/loaders/RGBELoader.js'
+       
+        import { EffectComposer } from 'https://unpkg.com/three@0.139.2/examples/jsm/postprocessing/EffectComposer.js';
+		import { RenderPass } from 'https://unpkg.com/three@0.139.2/examples/jsm/postprocessing/RenderPass.js';
+		import { UnrealBloomPass } from 'https://unpkg.com/three@0.139.2/examples/jsm/postprocessing/UnrealBloomPass.js';
+
+
         const w = $(window).width()
         const h = $(window).height()
 
-        const scene = new THREE.Scene();
-        const cam = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-        const gl = new THREE.WebGLRenderer();
+        const scene = new THREE.Scene()
+        const cam = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000)
+        const gl = new THREE.WebGLRenderer()
 
+        const rend = new RenderPass(scene, cam)
+        const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.75, 0.4, 0.85)
+        const composer = new EffectComposer(gl)
+
+        composer.setPixelRatio(window.devicePixelRatio)
+        composer.setSize(w, h)
+        composer.addPass(rend)
+        composer.addPass(bloom)
+
+        // Download game assets
         const prefabs = {
-            'note': new THREE.Mesh(
-                new THREE.ConeGeometry(),
-                new THREE.MeshBasicMaterial({ color: 0x00ffff })
-            ),
-            'saber': new THREE.Mesh(
-                new THREE.BoxGeometry(0.25, 4, 0.25),
-                new THREE.MeshBasicMaterial({ color: 0xff0000 })
-            ),
+            'rnote': await (async () => {
+                const base64 = await $.get('https://608dev-2.net/sandbox/sc/team27/asset.py?path=rnote.glb')
+                const uri = `data:model/gltf-binary;base64,${base64}`
+                const gltf = new GLTFLoader()
+
+                return await gltf.loadAsync(uri).then(x => x.scene)
+            })(),
+            'bnote': await (async () => {
+                const base64 = await $.get('https://608dev-2.net/sandbox/sc/team27/asset.py?path=bnote.glb')
+                const uri = `data:model/gltf-binary;base64,${base64}`
+                const gltf = new GLTFLoader()
+
+                return await gltf.loadAsync(uri).then(x => x.scene)
+            })(),
+            'rsaber': await (async () => {
+                const base64 = await $.get('https://608dev-2.net/sandbox/sc/team27/asset.py?path=rsaber.glb')
+                const uri = `data:model/gltf-binary;base64,${base64}`
+                const gltf = new GLTFLoader()
+
+                return await gltf.loadAsync(uri).then(x => x.scene)
+            })(),
+            'bsaber': await (async () => {
+                const base64 = await $.get('https://608dev-2.net/sandbox/sc/team27/asset.py?path=bsaber.glb')
+                const uri = `data:model/gltf-binary;base64,${base64}`
+                const gltf = new GLTFLoader()
+
+                return await gltf.loadAsync(uri).then(x => x.scene)
+            })(),
+            'env': await (async () => {
+                const base64 = await $.get('https://608dev-2.net/sandbox/sc/team27/asset.py?path=env.hdr')
+                const uri = `data:image/hdr;base64,${base64}`
+                const hdr = new RGBELoader()
+
+                return await hdr.loadAsync(uri)
+            })(),
         }
-        const lsaber = prefabs['saber'].clone(true)
-        const rsaber = prefabs['saber'].clone(true)
+        const lsaber = prefabs['rsaber']
+        const rsaber = prefabs['bsaber']
         const heading = new THREE.ArrowHelper(
             new THREE.Vector3(),            // Direction
             new THREE.Vector3(-1, 0, -3),   // Origin
@@ -182,14 +227,27 @@
             0xffff00,                       // Color
         )
 
-        lsaber.position.set(-1, 0, -3)
-        rsaber.position.set(+1, 0, -3)
+        lsaber.position.set(-1, -1, -3)
+        rsaber.position.set(+1, -1, -3)
+
+        const lit = {
+            'ambient': new THREE.AmbientLight(0xf0f0f0),
+            'direct': new THREE.PointLight(0xffffff, 0.7, 30),
+            'gentle': new THREE.PointLight(0xffffff, 0.2, 100),
+        }
+        lit['direct'].position.set(-3, 2, 0)
+
+        prefabs['env'].mapping = THREE.EquirectangularReflectionMapping
+        scene.environment = prefabs['env']
 
         gl.setSize(w, h)
         scene.add(cam)
+        scene.add(lit['ambient'])
         cam.add(lsaber)
         cam.add(rsaber)
         cam.add(heading)
+        cam.add(lit['direct'])
+        cam.add(lit['gentle'])
 
         $("#begin").on('click', async () => {
             // Hide button, show 3D
@@ -213,7 +271,7 @@
                 // Spawn-in new notes
                 for (let note of notes.next(time = (t / 1000))) {
                     // Attach three.js object
-                    note.obj = prefabs['note'].clone(true)
+                    note.obj = prefabs[note.type == 0 ? 'rnote' : 'bnote'].clone(true)
                     // Position it in 3D space
                     note.obj.position.z = -note.pos
                     note.obj.position.x = note.row
@@ -226,7 +284,8 @@
                 cam.position.z = -notes.time(t / 1000) * Level.Note.spacing
 
                 // Render
-                gl.render(scene, cam)
+                // gl.render(scene, cam)
+                composer.render()
             }
             const input = ({ value, done }) => {
                 // Disconnected

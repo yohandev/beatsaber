@@ -5,7 +5,7 @@
 #include "imu.h"
 #include "num.h"
 
-#define RECV // Uncomment this line to upload the receiver code
+// #define RECV // Uncomment this line to upload the receiver code
 
 #if defined RECV
 void setup() {
