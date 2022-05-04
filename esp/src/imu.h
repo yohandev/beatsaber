@@ -17,7 +17,8 @@ class Imu {
     vec3 acc;           // Last polled accel
     vec3 gyr;           // Last polled gyro
 
-    vec3 drift;         // Gyroscope bias
+    vec3 ang_drift;         // Gyroscope bias
+    vec3 acc_drift;
 public:
     /**
      * Attempts to begin the I2C connection and connect to the
@@ -32,16 +33,19 @@ public:
      * Calibrate the gyroscope drift by averaging `n` readings every
      * `period` ms. The device must be at standstill while this occurs.
      */
-    void calibrate(u32 n, u32 period = 1) {
+    void calibrate(u32 n, u32 period = 1, vec3 gravity = vec3()) {
         // Reset bias
-        this->drift = vec3();
+        this->ang_drift = vec3();
+        this->acc_drift = vec3();
         // Average
         for (i32 i = 0; i < n; i++) {
-            this->drift += this->poll().gyr;
+            this->ang_drift += this->poll().gyr;
+            this->acc_drift += this->poll().acc - gravity;
             // Not super precise but it's OK
             delay(period);
         }
-        this->drift /= n;
+        this->ang_drift /= n;
+        this->acc_drift /= n;
     }
 
     /**
@@ -71,13 +75,21 @@ public:
      * Get the last-polled accelerometer readings(m/s^2)
      */
     vec3 accel() const {
-        return this->acc;
+        return this->acc - this->acc_drift;
+    }
+
+    vec3 get_drift() const{
+      return this->acc_drift;
+    }
+
+    vec3 get_acc() const {
+      return this->acc;
     }
 
     /**
      * Get the last-polled gyroscope readings(rad/s)
      */
     vec3 gyro() const {
-        return this->gyr - this->drift;
+        return this->gyr - this->ang_drift;
     }
 };
