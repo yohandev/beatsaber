@@ -35,7 +35,12 @@ void loop() { /* It's empty here... */ }
 
 #else
 
-const u8 ADDR[] = { 0x7C, 0xDF, 0xA1, 0x0F, 0x07, 0x66 };
+/** NEO PIXEL BITS **/
+#include <Adafruit_NeoPixel.h>
+
+Adafruit_NeoPixel neo = Adafruit_NeoPixel(100, 15, NEO_GRB + NEO_KHZ800);
+
+const u8 ADDR[] = { 0x60, 0x55, 0xF9, 0xD9, 0xD7, 0x02 };
 
 const int DT = 50;
 Timer timer(DT);    // Serial write timer
@@ -84,6 +89,10 @@ void setup() {
   //set up serial monitor
   Serial.begin(115200);
   while(!Serial);
+
+  // lightsaber
+  neo.fill(neo.Color(0, 100, 150));
+  neo.show();
 
   //setup tft 
   tft.init();
