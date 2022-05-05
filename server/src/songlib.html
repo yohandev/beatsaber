@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Song Selection</title>
+
+    <!-- DEPENDENCIES -->
+    <script
+      src="https://code.jquery.com/jquery-3.6.0.min.js"
+      integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+      crossorigin="anonymous"
+    ></script>
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,200&display=swap");
+      body {
+        background-color: rgb(30, 30, 30);
+        font-family: "Kanit", sans-serif;
+      }
+      .start-button {
+        text-align: center;
+        display: block;
+        margin: auto;
+        text-decoration: none;
+        padding: 10px 15px;
+        border: 3px solid black;
+        font-size: 25px;
+        font-family: "Kanit", sans-serif;
+        background-color: black;
+        font-weight: bold;
+        color: red;
+        text-shadow: 0 0 8px red;
+      }
+
+      .start-button:hover {
+        border: 3px solid rgba(255, 0, 0, 75%);
+        border-radius: 5px;
+        box-shadow: 0 0 20px red;
+      }
+      #container {
+        height: 100%;
+        width: 100%;
+        font-size: 0;
+      }
+      .left,
+      .right {
+        display: inline-block;
+        *display: inline;
+        zoom: 1;
+        vertical-align: top;
+        font-size: 12px;
+        margin: 1.5%;
+        border-radius: 12px;
+        padding: 0.5%;
+        width: 45%;
+        background: black;
+        height: 200px;
+        color: rgb(190, 220, 250);
+        text-shadow: 0 0 8px rgb(50, 150, 250);
+      }
+      .img {
+        width: 25%;
+        float: left;
+        margin-right: 5%;
+      }
+      .name {
+        font-size: 25px;
+        padding: 0px 20px 0px 20px;
+      }
+      .play {
+        background-color: white;
+      }
+      .play:hover {
+        background-color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      const on_input = (idxs) => {
+        // console.log(idxs);
+        idxs = JSON.parse(idxs);
+        console.log(idxs);
+        console.log(`btn${idxs["i"]}`);
+        $(`#btn${idxs["old"]}`).css("border", "none");
+        $(`#btn${idxs["i"]}`).css("border", "3px solid rgba(255,0,0,75%)");
+        $(`#btn${idxs["i"]}`).css("border-radius", "5px");
+        $(`#btn${idxs["i"]}`).css("box-shadow", "0 0 20px red");
+
+        if (idxs["op"] == "select") {
+          $(`#btn${idxs["i"]}`).click();
+        }
+        // function sleep(ms) {
+        //     return new Promise(resolve => setTimeout(resolve, ms));
+        // }
+
+        // async function demo() {
+        //     for (let i = 0; i < 5; i++) {
+        //         console.log(`Waiting .${i} seconds...`);
+        //         await sleep(i * 100);
+        //     }
+        //     console.log('Done');
+        // }
+
+        // demo();
+        $.get(
+          "https://608dev-2.net/sandbox/sc/team27/button_server.py",
+          on_input
+        );
+      };
+      $.get(
+        "https://608dev-2.net/sandbox/sc/team27/button_server.py",
+        on_input
+      );
+    </script>
+
+    <div id="container">
+      <div class="left">
+        <img class="img" src="images/24.jpg" />
+        <h1 class="name">NEW STYLE</h1>
+        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=24">
+          <button id="btn0" class="play, start-button">PLAY</button>
+        </a>
+      </div>
+      <div class="right">
+        <img class="img" src="images/512.jpg" />
+        <h1 class="name">FATE APROCRYPHA OST - THE KNIGHT OF REBELLION</h1>
+        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=512">
+          <button id="btn1" class="play, start-button">PLAY</button>
+        </a>
+      </div>
+      <div class="left">
+        <img class="img" src="images/300.jpg" />
+        <h1 class="name">CARAMELLDANSEN</h1>
+        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=300">
+          <button id="btn2" class="play, start-button">PLAY</button>
+        </a>
+      </div>
+      <div class="right">
+        <img class="img" src="images/150.png" />
+        <h1 class="name">DEEP IN ABYSS</h1>
+        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=150">
+          <button id="btn3" class="play, start-button">PLAY</button>
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

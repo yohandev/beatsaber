@@ -82,11 +82,7 @@
                 continue;
               }
             }
-            // Stay alive
-            this.active[i++] = note;
           }
-          // Remove destroyed notes
-          this.active.splice(i);
         }
 
         // Returns the time, in beats, given the time in seconds
@@ -114,6 +110,7 @@
           return this.info["_beatsPerMinute"];
         }
       }
+
       // A Beat Saber note/block
       Level.Note = class {
         // Width of 3D model(world space)
@@ -128,7 +125,7 @@
           5: 315,
           6: 135,
           7: 225,
-          8: 1000,
+          8: 0,
         };
         // Cut direction -> Vector(world space)
         static vector = {
@@ -312,7 +309,6 @@
         const reader = port.readable.getReader();
         const writer = port.writable.getWriter();
 
-        // Parse level data
         const notes = new Level(await info, await level);
 
         let time = null;
