@@ -3,6 +3,10 @@
     <head>
         <meta charset="UTF-8">
         <title>Song Selection</title>
+
+        <!-- DEPENDENCIES -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
         <style>
             body {
                 background-color:rgb(59, 59, 59);
@@ -45,33 +49,64 @@
         </style>
     </head>
     <body>
+        <script>
+
+            const on_input = (idxs) => {
+                // console.log(idxs);
+                idxs = JSON.parse(idxs)
+                console.log(idxs);
+                console.log(`btn${idxs['i']}`);
+                $(`#btn${idxs['old']}`).css('border', 'none');
+                $(`#btn${idxs['i']}`).css('border', '10px solid red');
+
+                if (idxs['op'] == 'select') {
+                    $(`#btn${idxs['i']}`).click();
+                }
+                // function sleep(ms) {
+                //     return new Promise(resolve => setTimeout(resolve, ms));
+                // }
+
+                // async function demo() {
+                //     for (let i = 0; i < 5; i++) {
+                //         console.log(`Waiting .${i} seconds...`);
+                //         await sleep(i * 100);
+                //     }
+                //     console.log('Done');
+                // }
+
+                // demo();
+                $.get("https://608dev-2.net/sandbox/sc/team27/button_server.py", on_input)
+            }
+            $.get("https://608dev-2.net/sandbox/sc/team27/button_server.py", on_input)
+        </script>
+
         <div id="container">
         <div class="left">
             <img class="img" src="images/24.jpg">
             <h1 class="name">New Style</h1>
             <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=24">
-                <button class="play, start-button">Play</button>
+                <button id="btn0" class="play, start-button">Play</button>
             </a>
         </div>
         <div class="right">
             <img class="img" src="images/512.jpg">
             <h1 class="name">Fate Apocrypha OST - The Knight of Rebellion</h1>
             <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=512">
-                <button class="play, start-button">Play</button>
+                <button id="btn1" class="play, start-button">Play</button>
             </a>
         </div>
         <div class="left">
             <img class="img" src="images/300.jpg">
             <h1 class="name">Caramelldansen</h1>
             <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=300">
-                <button class="play, start-button">Play</button>
+                <button id="btn2" class="play, start-button">Play</button>
             </a>
         </div>
         <div class="right">
             <img class="img" src="images/150.png">
             <h1 class="name">Deep In Abyss</h1>
             <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=150">
-                <button class="play, start-button">Play</button>
+                <button id="btn3" class="play, start-button">Play</button>
             </a>
         </div>
         </div>

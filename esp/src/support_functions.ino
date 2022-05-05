@@ -1,4 +1,3 @@
-
 /*----------------------------------
  * char_append Function:
  * Arguments:

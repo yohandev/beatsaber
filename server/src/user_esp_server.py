@@ -1,87 +1,72 @@
 import sqlite3
+import requests
+import datetime
 
-db = '/var/jail/home/team27/users_and_scores.db'
+button_controls_db = '/var/jail/home/team27/button_controls.db'
+web_server_url = 'https://608dev-2.net/sandbox/sc/team27/user_web_server.py'
 
 
 def request_handler(request):
     if request['method'] == 'GET':
-        (dir, score) = get_data()
-        return {'dir': str(dir),
-                'score': int(score)}
+        return {'in_game_state': 0}
 
     elif request['method'] == 'POST':
-        dir = str(request['form']['dir'])
-        dir_str = ""
-        if dir[0] == '1':
-            dir_str += "left, "
-        if dir[1] == '1':
-            dir_str += "right, "
-        if dir[2] == '1':
-            dir_str += "up, "
-        if dir[3] == '1':
-            dir_str += "down, "
-        if len(dir_str) == 0:
-            dir_str = "no move"
-        score = get_score()
-        set_data(dir, score)
+        op = str(request['form']['op'])
+        set_data(op)  # add to database
+        # r = requests.get(url=web_server_url, params={"sending_controls": True})
 
-        return {'dir': str(dir),
-                'score': int(score)}
+        # extracting data in json format
+        # data = r.json()
+
+        return f"{op} added to database"
 
     else:
         return None
 
 
 def create_database():
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(button_controls_db)
     c = conn.cursor()
 
-    c.execute("""CREATE TABLE IF NOT EXISTS sensor_data
-        (dir text, score int);""")  # noqa: E501
+    c.execute("""CREATE TABLE IF NOT EXISTS controls_db
+        (op text, cur_elem int, timing timestamp);""")  # noqa: E501
 
     conn.commit()
     conn.close()
 
 
-def set_data(dir, score):
+def set_data(op):
     create_database()
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(button_controls_db)
     c = conn.cursor()
 
-    c.execute("DELETE FROM sensor_data")
-    conn.commit()
+    cur_elem = get_cur_elem()
 
-    c.execute("INSERT into sensor_data VALUES (?, ?)", (dir, score))
+    if op == 'right':
+        cur_elem += 1
+    elif op == 'left':
+        cur_elem -= 1
+
+    elif op == 'reset':
+        cur_elem = 0
+
+    c.execute("INSERT into controls_db VALUES (?, ?, ?)", (op, cur_elem, datetime.datetime.now()))
 
     conn.commit()
     conn.close()
 
 
-def get_data():
+def get_cur_elem():
     create_database()
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(button_controls_db)
     c = conn.cursor()
 
-    c.execute('''SELECT * FROM sensor_data''')
-    data = c.fetchone()
-    if data is None:
-        return ("no move", 0)
+    things = c.execute('''SELECT cur_elem FROM controls_db ORDER BY timing DESC LIMIT 1;''').fetchone()
 
+    conn.commit()
     conn.close()
 
-    return data
-
-
-def get_score():
-    create_database()
-    conn = sqlite3.connect(db)
-    c = conn.cursor()
-
-    c.execute('''SELECT score FROM sensor_data''')
-    score = c.fetchone()
-    if score is None:
+    if things is None:
         return 0
-
-    conn.close()
-
-    return score[0]
+    else:
+        return things[0]

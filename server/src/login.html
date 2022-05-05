@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Login</title>
+
+        <!-- DEPENDENCIES -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <script>
+
+            const on_input = (idxs) => {
+                // console.log(idxs);
+                idxs = JSON.parse(idxs)
+                console.log(idxs);
+                console.log(`btn${idxs['i']}`);
+                $(`#btn${idxs['old']}`).css('border', 'none');
+                $(`#btn${idxs['i']}`).css('border', '10px solid red');
+
+                if (idxs['op'] == 'select') {
+                    $(`#btn${idxs['i']}`).click();
+                }
+                // function sleep(ms) {
+                //     return new Promise(resolve => setTimeout(resolve, ms));
+                // }
+
+                // async function demo() {
+                //     for (let i = 0; i < 5; i++) {
+                //         console.log(`Waiting .${i} seconds...`);
+                //         await sleep(i * 100);
+                //     }
+                //     console.log('Done');
+                // }
+
+                // demo();
+                $.get("https://608dev-2.net/sandbox/sc/team27/button_server.py", on_input)
+            }
+            $.get("https://608dev-2.net/sandbox/sc/team27/button_server.py", on_input)
+        </script>
+
+        <h1>Welcome to Beatsaber!</h1>
+        <form action="#" method="get">
+
+        <h2>Returning or Registering User: </h2>
+
+        <br>
+        Username:
+            <input type="text" id="user" name="username">
+        <br>
+
+        <br>
+            <label for="score">Set User Score(between 0 and 20):</label>
+            <input type="range" id="score" name="score" min="0" max="20" oninput="this.nextElementSibling.value = this.value">
+            <output>10</output>
+        <br>
+
+        <button id="btn0" type="submit" name="returning" value="song_selection.py">
+            Login
+        </button>
+
+        <button id="btn1" type="submit" name="new" value="True" formaction="song_selection.py">
+            Register User
+        </button>
+
+        <h2>See Leaderboard: </h2>
+        <button id="btn2" type="submit" name="leaderboard" value="True" formaction="?leaderboard">
+            Leaderboard
+        </button>
+        
+        </form>
+
+    </body>
+</html>

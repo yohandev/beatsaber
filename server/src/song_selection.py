@@ -5,39 +5,36 @@ button_controls_db = '/var/jail/home/team27/button_controls.db'
 
 
 def request_handler(request):
+    # return request
     if request['method'] == 'GET':
-        # if 'sending_controls' in request['args']:
-        #     op, cur_idx = get_controls()
-        # cur_idx = 0
-
-        with open("/var/jail/home/team27/login.html", "r") as f:
+        with open("/var/jail/home/team27/songlib.html", "r") as f:
             return f.read()
 
-    elif request['method'] == 'POST':
-        if 'new' in request['form']:
-            user, score = request['form']['username'], request['form']['score']
-            updated_db = set_data(user, score, returning=False)
-            if updated_db:
-                return '<h1>{} Score Updated!:</h1> <p>Score: {}</p><br> \
-                    <a href="./user_web_server.py">Change User/Game Score</a>'.format(user, score)
-            else:
-                return '<h1>This username is already registered. Please Login.</h1> <br> \
-                    <a href="./user_web_server.py">Back to Login</a>'
-        elif 'returning' in request['form']:
-            user, score = request['form']['username'], request['form']['score']
-            updated_db = set_data(user, score, returning=True)
-            if updated_db:
-                return '<h1>{} Score Updated!:</h1> <p>Score: {}</p><br> \
-                    <a href="./user_web_server.py">Change User/Game Score</a>'.format(user, score)
-            else:
-                return '<h1>User not found. Please Register.</h1> <br> \
-                    <a href="./user_web_server.py">Back to Login</a>'
+    # elif request['method'] == 'POST':
+    #     if 'new' in request['form']:
+    #         user, score = request['form']['username'], request['form']['score']
+    #         updated_db = set_data(user, score, returning=False)
+    #         if updated_db:
+    #             return '<h1>{} Score Updated!:</h1> <p>Score: {}</p><br> \
+    #                 <a href="./user_web_server.py">Change User/Game Score</a>'.format(user, score)
+    #         else:
+    #             return '<h1>This username is already registered. Please Login.</h1> <br> \
+    #                 <a href="./user_web_server.py">Back to Login</a>'
+    #     elif 'returning' in request['form']:
+    #         user, score = request['form']['username'], request['form']['score']
+    #         updated_db = set_data(user, score, returning=True)
+    #         if updated_db:
+    #             return '<h1>{} Score Updated!:</h1> <p>Score: {}</p><br> \
+    #                 <a href="./user_web_server.py">Change User/Game Score</a>'.format(user, score)
+    #         else:
+    #             return '<h1>User not found. Please Register.</h1> <br> \
+    #                 <a href="./user_web_server.py">Back to Login</a>'
 
-        elif 'leaderboard' in request['form']:
-            data = get_top_scores()
-            return '<h1>Leaderboard:</h1> <p>Top 10: {}</p><br> \
-                <a href="./user_web_server.py">Back to Login</a>'.format(data)
-        return request['form']
+    #     elif 'leaderboard' in request['form']:
+    #         data = get_top_scores()
+    #         return '<h1>Leaderboard:</h1> <p>Top 10: {}</p><br> \
+    #             <a href="./user_web_server.py">Back to Login</a>'.format(data)
+    #     return request['form']
 
     else:
         return '<h1>Invalid request</h1>'
