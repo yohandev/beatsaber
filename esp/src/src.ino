@@ -9,6 +9,10 @@
 #include "num.h"
 #include "message.h"
 
+#include <Adafruit_NeoPixel.h>
+
+Adafruit_NeoPixel neo = Adafruit_NeoPixel(100, 15, NEO_GRB + NEO_KHZ800);
+
 // #define RECV
 int isRight = 0;
 //using int because will be padded anyways
@@ -96,6 +100,11 @@ void setup() {
   ledcSetup(AUDIO_PWM, 200, 12);//12 bits of PWM precision
   ledcWrite(AUDIO_PWM, 0); //0 is a 0% duty cycle for the NFET
   ledcAttachPin(AUDIO_TRANSDUCER, AUDIO_PWM);
+
+  // NEO pixels
+  neo.begin();
+  neo.fill(neo.Color(0, 100, 150));
+  neo.show();
 
   // start peer
   peer.begin();
