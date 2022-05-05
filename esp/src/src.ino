@@ -402,7 +402,7 @@ void loop() {
       do_http_request("608dev-2.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT, true);
       // Serial.println(response_buffer);  //viewable in Serial Terminal
 
-      // in_game += 1;
+      in_game += 1;
       select_changed = true;
       if (select_changed){
         char body[100];
