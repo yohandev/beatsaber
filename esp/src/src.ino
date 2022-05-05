@@ -31,7 +31,7 @@ void setup() {
     });
 }
 
-void loop() { /* It's empty here... */ }
+void loop() { Serial.println("getting a response");Serial.println(Serial.read());/* It's empty here... */ }
 
 #else
 
@@ -89,6 +89,7 @@ void setup() {
   tft.init();
   tft.setRotation(2);
   tft.setTextSize(1);
+  tft.fillScreen(TFT_BLACK);
 
   //set up audio
   pinMode(AUDIO_TRANSDUCER, OUTPUT);
@@ -102,8 +103,8 @@ void setup() {
   //set up imu
   imu.begin();
   gravity = imu.poll().get_acc();
-  sprintf(output, "%f, %f, %f", gravity.x, gravity.y, gravity.z);
-  Serial.println(output);
+  //sprintf(output, "%f, %f, %f", gravity.x, gravity.y, gravity.z);
+  //Serial.println(output);
   imu.calibrate(10, DT, gravity);
 
   //buttons
@@ -111,7 +112,7 @@ void setup() {
   pinMode(BUTTON1, INPUT_PULLUP);
   pinMode(BUTTON2, INPUT_PULLUP);
   
-  Serial.println("initialization complete");
+  //Serial.println("initialization complete");
 }
 
 void loop() {
@@ -146,13 +147,10 @@ void loop() {
       mess.direction = direction;
       mess.isRight = isRight;
       peer.send((u8*)&mess, sizeof(message));
+ 
       Serial.write((u8*)&mess, sizeof(message));
-      //this is just for demo purposes,  should actually be determined by the response from server
-      draw_animationNumber = rand()%2+1;
-      tft.fillScreen(TFT_BLACK);
-      if (draw_animationNumber==1){
-        score+=1;
-      }
+      delay(10);
+      
     }
 
     // button 2 can be used to reinitialize
@@ -165,6 +163,18 @@ void loop() {
       sprintf(output, "%f, %f, %f", gravity.x, gravity.y, gravity.z);
       Serial.println(output);
       
+    }
+    int incoming = Serial.read();
+    if(incoming!=-1){
+      tft.fillScreen(TFT_BLACK);
+      if(incoming>0){
+        draw_animationNumber = 1;
+        
+        score+=incoming;
+      }else{
+        draw_animationNumber = 2;
+      }
+    //   incoming = -1;
     }
 
     //response animation and sounds

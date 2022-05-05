@@ -310,6 +310,7 @@
         await port.open({ baudRate: 115200 });
         // Configure reader
         const reader = port.readable.getReader();
+        const writer = port.writable.getWriter();
 
         // Parse level data
         const notes = new Level(await info, await level);
@@ -368,6 +369,8 @@
           heading.setDirection(v);
           // Calculate hits
           if (direction != -1) {
+            var count = 0;
+
             for (const note of notes.hit(
               time,
               v.toArray(),
@@ -375,7 +378,11 @@
               isRight
             )) {
               scene.remove(note.obj);
+              count++;
             }
+            console.log("count:");
+            console.log(count);
+            writer.write(new Uint8Array([count]));
           }
         };
         // Start
