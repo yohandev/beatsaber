@@ -59,7 +59,7 @@
         // Takes time(in beats), current heading of the light saber(world space),
         // yields all the notes that were destroyed.
         // TODO manages points
-        *hit(time, saber) {
+        *hit(time, saber, direction, remote) {
           // Convert to beats
           time = this.time(time);
           // Reduced length of `this.active`
@@ -70,7 +70,12 @@
             //  >> TODO actual bounding box computation
             if (Math.abs(time - note.beat) < 2) {
               // 2. Angle
-              if (note.angle_with(this.saber_vel(saber)) < 30) {
+              if (
+                Math.abs(
+                  note.angle - ((Level.Note.angle[direction] + 180) % 360)
+                ) <= 45 &&
+                note.type == remote
+              ) {
                 console.log("nice!");
                 // Destroy
                 yield note;
@@ -123,7 +128,7 @@
           5: 315,
           6: 135,
           7: 225,
-          8: 0,
+          8: 1000,
         };
         // Cut direction -> Vector(world space)
         static vector = {
@@ -348,9 +353,9 @@
           if (direction != -1) {
             console.log(direction);
           }
-          const isLeft = new Int32Array(value.buffer, 28, 1)[0]; //1 implies left, 0 implies right
+          const isRight = new Int32Array(value.buffer, 28, 1)[0]; //1 implies right, 0 implies left
           var v;
-          if (isLeft) {
+          if (!isRight) {
             lsaber.rotation.set(...new Float64Array(value.buffer, 0, 3));
             // Heading vector
             v = new THREE.Vector3(0, 1, 0).applyEuler(lsaber.rotation);
@@ -362,8 +367,15 @@
 
           heading.setDirection(v);
           // Calculate hits
-          for (const note of notes.hit(time, v.toArray())) {
-            scene.remove(note.obj);
+          if (direction != -1) {
+            for (const note of notes.hit(
+              time,
+              v.toArray(),
+              direction,
+              isRight
+            )) {
+              scene.remove(note.obj);
+            }
           }
         };
         // Start

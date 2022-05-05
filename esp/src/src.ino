@@ -10,7 +10,7 @@
 #include "message.h"
 
 // #define RECV
-int isLeft = 1;
+int isRight = 0;
 //using int because will be padded anyways
 
 #if defined RECV
@@ -126,6 +126,7 @@ void loop() {
       vec3 curr_acc = imu.accel();
       if (abs(sqrt(curr_acc.x*curr_acc.x+curr_acc.y*curr_acc.y+curr_acc.z*curr_acc.z)-10.5)<0.1){
         resetOrientation();
+        ang.z = 0;
       }
     }
     else if (button1state==1){
@@ -143,7 +144,7 @@ void loop() {
       mess.ang.y = ang.y;
       mess.ang.z = ang.z;
       mess.direction = direction;
-      mess.isLeft = isLeft;
+      mess.isRight = isRight;
       peer.send((u8*)&mess, sizeof(message));
       Serial.write((u8*)&mess, sizeof(message));
       //this is just for demo purposes,  should actually be determined by the response from server
@@ -177,7 +178,7 @@ void loop() {
     mess.ang.y = ang.y;
     mess.ang.z = ang.z;
     mess.direction = -1;
-    mess.isLeft = isLeft;
+    mess.isRight = isRight;
     peer.send((u8*)&mess, sizeof(message));
     Serial.write((u8*)&mess, sizeof(message));
   }

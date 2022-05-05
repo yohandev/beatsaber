@@ -5,5 +5,5 @@
 struct message{
   vec3 ang;
   int direction;
-  int isLeft;
+  int isRight;
 };
