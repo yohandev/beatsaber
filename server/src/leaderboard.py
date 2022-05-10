@@ -1,16 +1,13 @@
 import sqlite3
 
 db = '/var/jail/home/team27/users_and_scores.db'
-button_controls_db = '/var/jail/home/team27/button_controls.db'
 
 
 def request_handler(request):
     if request['method'] == 'GET':
-        with open("/var/jail/home/team27/login.html", "r") as f:
-            return f.read()
-
-    else:
-        return '<h1>Invalid request</h1>'
+        data = get_top_scores()
+        return '<h1>Leaderboard:</h1> <p>Top 10: {}</p><br> \
+            <a href="./user_web_server.py">Back to Login</a>'.format(data)
 
 
 def create_database():
@@ -24,12 +21,12 @@ def create_database():
     conn.close()
 
 
-def get_highscore(user):
+def get_top_scores():
     create_database()
     conn = sqlite3.connect(db)
     c = conn.cursor()
 
-    things = c.execute('''SELECT highscore FROM game_db WHERE user = (?)''', (user, )).fetchone()  # noqa: E501
+    things = c.execute('''SELECT user, highscore FROM game_db ORDER BY highscore ASC LIMIT 10''').fetchall()
 
     conn.commit()
     conn.close()
