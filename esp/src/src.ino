@@ -6,16 +6,22 @@
 #include "peer.h"
 #include "timer.h"
 #include "button.h"
+#include "draw.h"
 
 /* PROGRAM PARAMETERS */
-// #define UPLOAD_RECV         // Uncomment to upload the receiver code
-#define UPLOAD_LEFT         // Uncomment to upload the left-remote's code
+#define UPLOAD_RECV         // Uncomment to upload the receiver code
+//#define UPLOAD_LEFT         // Uncomment to upload the left-remote's code
 
 const u8 ADDR_RECV[] = { 0x7C, 0xDF, 0xA1, 0x1A, 0x2F, 0xE6 };
 const u8 ADDR_L[] = {};
 const u8 ADDR_R[] = {};
 
+
 #if defined UPLOAD_RECV
+Draw draw;
+int score = 0;
+Timer timer(50);
+
 void setup() {
     // Website is configured for 115200 bps
     Serial.begin(115200);
@@ -26,6 +32,8 @@ void setup() {
     // Place this in ADDR below
     Serial.println(Peer::addr());
 
+    draw.begin();
+
     // Relay every message received
     Peer::recv(+[](const u8* mac, const u8* buf, int len) {
         Serial.write(buf, len);
@@ -34,9 +42,18 @@ void setup() {
 
 void loop() {
     while (Serial.available()) {
-        i32 score;
-        Serial.read((u8*)&score, sizeof(i32));
-        Serial.printf("Score: %d\n", score);
+        i32 hits;
+        Serial.read((u8*)&hits, sizeof(i32));
+        Serial.printf("Hits: %d\n", hits);
+        if(hits>0){
+            draw.set_animationNumber(1);
+            score+=hits;
+        }else{
+            draw.set_animationNumber(2);
+        }
+    }
+    if(timer.poll()){
+        draw.draw(score);
     }
 }
 
