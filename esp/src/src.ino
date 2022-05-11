@@ -10,6 +10,10 @@
 #include "num.h"
 #include "message.h"
 
+#include <Adafruit_NeoPixel.h>
+
+Adafruit_NeoPixel neo = Adafruit_NeoPixel(100, 15, NEO_GRB + NEO_KHZ800);
+
 bool select_changed = false;
 
 uint8_t b1_press;
@@ -107,6 +111,13 @@ int isRight = 0;
 //using int because will be padded anyways
 
 #if defined RECV
+
+// const u8 ADDR1[] = { 0x7C, 0xDF, 0xA1, 0x0F, 0x07, 0x66 };
+// const u8 ADDR2[] = { 0x7C, 0xDF, 0xA1, 0x0F, 0x07, 0x66 };
+
+// Peer peer1(ADDR1);
+// Peer peer2(ADDR2);
+
 void setup() {
     // Website is configured for 115200 bps
     Serial.begin(115200);
@@ -114,21 +125,31 @@ void setup() {
     // Await serial
     while (!Serial);
 
+    // peer1.begin();
+    // peer2.begin();
+
+
     // Place this in ADDR below
     Serial.println(Peer::addr());
 
     // Relay every message received
     Peer::recv(+[](const u8* mac, const u8* buf, int len) {
         Serial.write(buf, len);
-
+        
     });
 }
 
-void loop() { Serial.println("getting a response");Serial.println(Serial.read());/* It's empty here... */ }
+void loop() { int incoming = Serial.read();
+// if (incoming!=-1){
+//   peer1.send((u8*)incoming, sizeof(incoming));/* It's empty here... */ 
+//   peer1.send((u8*)incoming, sizeof(incoming));  
+// }
+Serial.println(Peer::addr());
+}
 
 #else
 
-const u8 ADDR[] = { 0x7C, 0xDF, 0xA1, 0x0F, 0x07, 0x66 };
+const u8 ADDR[] = { 0x7C, 0xDF, 0xA1, 0x1A, 0x2F, 0xE6};
 
 const int DT = 50;
 Timer timer(DT);    // Serial write timer
@@ -171,7 +192,7 @@ int in_game = 0;
 const char POST_URL[] = "POST https://608dev-2.net/sandbox/sc/team27/user_esp_server.py HTTP/1.1\r\n";
 const char GET_URL[] = "GET https://608dev-2.net/sandbox/sc/team27/user_esp_server.py HTTP/1.1\r\n";
 
-char network[] = "MIT";
+char network[] = "EECS_Labs";
 char password[] = "";
 
 uint8_t channel = 1; //network channel on 2.4 GHz
@@ -199,6 +220,10 @@ void setup() {
   //set up serial monitor
   Serial.begin(115200);
   while(!Serial);
+
+  neo.begin();
+  neo.fill(neo.Color(0, 100, 150));
+  neo.show();
 
   int n = WiFi.scanNetworks();
   Serial.println("scan done");
@@ -255,6 +280,16 @@ void setup() {
   ledcWrite(AUDIO_PWM, 0); //0 is a 0% duty cycle for the NFET
   ledcAttachPin(AUDIO_TRANSDUCER, AUDIO_PWM);
 
+  // Peer::recv(+[](const u8* mac, const u8* buf, int len) {
+  //     tft.fillScreen(TFT_BLACK);
+  //     if(buf>0){
+  //       draw_animationNumber = 1;
+  //       score+=*((int*)buf);
+  //     }else{
+  //       draw_animationNumber = 2;
+  //     }
+  //   });
+
   // start peer
   peer.begin();
 
@@ -274,7 +309,7 @@ void setup() {
 }
 
 void loop() {
-  if (in_game == 2){
+  if (in_game >= 2){
     if(timer.poll()){
       //integrate for angle
       getAngle();
@@ -308,11 +343,8 @@ void loop() {
         peer.send((u8*)&mess, sizeof(message));
         Serial.write((u8*)&mess, sizeof(message));
         //this is just for demo purposes,  should actually be determined by the response from server
-        draw_animationNumber = rand()%2+1;
-        tft.fillScreen(TFT_BLACK);
-        if (draw_animationNumber==1){
-          score+=1;
-        }
+        delay(10);
+
       }
 
       // button 2 can be used to reinitialize

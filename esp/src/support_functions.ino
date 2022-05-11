@@ -1,3 +1,6 @@
+#if defined RECV
+#else
+
 /*----------------------------------
  * char_append Function:
  * Arguments:
@@ -58,3 +61,4 @@ void do_http_request(const char* host, char* request, char* response, uint16_t r
     client.stop();
   }
 }        
+#endif

@@ -57,6 +57,7 @@
         height: 200px;
         color: rgb(190, 220, 250);
         text-shadow: 0 0 8px rgb(50, 150, 250);
+        box-shadow: 0 0 20px rgb(35, 85, 145);
       }
       .img {
         width: 25%;
@@ -82,7 +83,8 @@
         idxs = JSON.parse(idxs);
         console.log(idxs);
         console.log(`btn${idxs["i"]}`);
-        $(`#btn${idxs["old"]}`).css("border", "none");
+        $(`#btn${idxs["old"]}`).css("border", "3px solid black");
+        $(`#btn${idxs["old"]}`).css("box-shadow", "none");
         $(`#btn${idxs["i"]}`).css("border", "3px solid rgba(255,0,0,75%)");
         $(`#btn${idxs["i"]}`).css("border-radius", "5px");
         $(`#btn${idxs["i"]}`).css("box-shadow", "0 0 20px red");
@@ -116,28 +118,24 @@
 
     <div id="container">
       <div class="left">
-        <img class="img" src="images/24.jpg" />
         <h1 class="name">NEW STYLE</h1>
         <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=24">
           <button id="btn0" class="play, start-button">PLAY</button>
         </a>
       </div>
       <div class="right">
-        <img class="img" src="images/512.jpg" />
         <h1 class="name">FATE APROCRYPHA OST - THE KNIGHT OF REBELLION</h1>
         <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=512">
           <button id="btn1" class="play, start-button">PLAY</button>
         </a>
       </div>
       <div class="left">
-        <img class="img" src="images/300.jpg" />
         <h1 class="name">CARAMELLDANSEN</h1>
         <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=300">
           <button id="btn2" class="play, start-button">PLAY</button>
         </a>
       </div>
       <div class="right">
-        <img class="img" src="images/150.png" />
         <h1 class="name">DEEP IN ABYSS</h1>
         <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=150">
           <button id="btn3" class="play, start-button">PLAY</button>
