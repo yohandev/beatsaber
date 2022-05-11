@@ -13,10 +13,6 @@ def request_handler(request):
     elif request['method'] == 'POST':
         op = str(request['form']['op'])
         set_data(op)  # add to database
-        # r = requests.get(url=web_server_url, params={"sending_controls": True})
-
-        # extracting data in json format
-        # data = r.json()
 
         return f"{op} added to database"
 

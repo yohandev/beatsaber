@@ -18,7 +18,7 @@ def create_database():
     c = conn.cursor()
 
     c.execute("""CREATE TABLE IF NOT EXISTS game_db
-        (user text, score int, highscore int);""")  # noqa: E501
+        (user text, score int, highscore int, 24_played int, 512_played int, 300_played int, 150_played int);""")  # noqa: E501
 
     conn.commit()
     conn.close()

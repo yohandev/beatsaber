@@ -79,31 +79,17 @@
     <script>
       const on_input = (idxs) => {
         // console.log(idxs);
-        idxs = JSON.parse(idxs);
-        console.log(idxs);
-        console.log(`btn${idxs["i"]}`);
-        $(`#btn${idxs["old"]}`).css("border", "none");
-        $(`#btn${idxs["i"]}`).css("border", "3px solid rgba(255,0,0,75%)");
-        $(`#btn${idxs["i"]}`).css("border-radius", "5px");
-        $(`#btn${idxs["i"]}`).css("box-shadow", "0 0 20px red");
+          idxs = JSON.parse(idxs);
+          console.log(idxs);
+          console.log(`btn${idxs["i"]}`);
+          $(`#btn${idxs["old"]}`).css("border", "none");
+          $(`#btn${idxs["i"]}`).css("border", "3px solid rgba(255,0,0,75%)");
+          $(`#btn${idxs["i"]}`).css("border-radius", "5px");
+          $(`#btn${idxs["i"]}`).css("box-shadow", "0 0 20px red");
 
-        if (idxs["op"] == "select") {
-          $(`#btn${idxs["i"]}`).click();
+          if (idxs["op"] == "select") {
+            $(`#btn${idxs["i"]}`).click();
         }
-        // function sleep(ms) {
-        //     return new Promise(resolve => setTimeout(resolve, ms));
-        // }
-
-        // async function demo() {
-        //     for (let i = 0; i < 5; i++) {
-        //         console.log(`Waiting .${i} seconds...`);
-        //         await sleep(i * 100);
-        //     }
-        //     console.log('Done');
-        // }
-
-        // demo();
-        $.get(
           "https://608dev-2.net/sandbox/sc/team27/button_server.py",
           on_input
         );
@@ -118,28 +104,32 @@
       <div class="left">
         <img class="img" src="images/24.jpg" />
         <h1 class="name">NEW STYLE</h1>
-        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=24">
+        <h2>'played_24?'</h2> 
+        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=24&user=<user.data>">
           <button id="btn0" class="play, start-button">PLAY</button>
         </a>
       </div>
       <div class="right">
         <img class="img" src="images/512.jpg" />
         <h1 class="name">FATE APROCRYPHA OST - THE KNIGHT OF REBELLION</h1>
-        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=512">
+        <h2>'played_512?'</h2> 
+        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=512&user=<user.data>">
           <button id="btn1" class="play, start-button">PLAY</button>
         </a>
       </div>
       <div class="left">
         <img class="img" src="images/300.jpg" />
         <h1 class="name">CARAMELLDANSEN</h1>
-        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=300">
+        <h2>'played_300?'</h2> 
+        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=300&user=<user.data>">
           <button id="btn2" class="play, start-button">PLAY</button>
         </a>
       </div>
       <div class="right">
         <img class="img" src="images/150.png" />
         <h1 class="name">DEEP IN ABYSS</h1>
-        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=150">
+        <h2>'played_150?'</h2> 
+        <a href="https://608dev-2.net/sandbox/sc/team27/game.py?id=150&user=<user.data>">
           <button id="btn3" class="play, start-button">PLAY</button>
         </a>
       </div>
