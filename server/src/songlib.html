@@ -90,9 +90,7 @@
           if (idxs["op"] == "select") {
             $(`#btn${idxs["i"]}`).click();
         }
-          "https://608dev-2.net/sandbox/sc/team27/button_server.py",
-          on_input
-        );
+          $.get("https://608dev-2.net/sandbox/sc/team27/button_server.py", on_input)
       };
       $.get(
         "https://608dev-2.net/sandbox/sc/team27/button_server.py",

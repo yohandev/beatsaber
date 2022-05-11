@@ -16,7 +16,7 @@ def request_handler(req):
     id = req['values']['id']
     user = req['values']['user']
 
-    if id in (24, 512, 300, 150):
+    if id in ("24", "512", "300", "150"):
         set_song_data(user, id)
 
     meta = requests.get(f"https://api.beatsaver.com/maps/id/{id}").json()
