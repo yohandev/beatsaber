@@ -12,6 +12,7 @@
 #include "num.h"
 
 class Imu {
+public:
     Adafruit_MPU6050 d; // Actual drivers
 
     vec3 acc;           // Last polled accel
@@ -19,7 +20,6 @@ class Imu {
 
     vec3 ang_drift;         // Gyroscope bias
     vec3 acc_drift;
-public:
     /**
      * Attempts to begin the I2C connection and connect to the
      * MPU6050 peripheral on the given pins. Returns `true` if
@@ -34,9 +34,11 @@ public:
      * `period` ms. The device must be at standstill while this occurs.
      */
     void calibrate(u32 n, u32 period = 1, vec3 gravity = vec3()) {
+        // Range: high precision
+        this->d.setGyroRange(MPU6050_RANGE_250_DEG);
         // Reset bias
-        this->ang_drift = vec3();
-        this->acc_drift = vec3();
+        this->ang_drift = vec3::zero();
+        this->acc_drift = vec3::zero();
         // Average
         for (i32 i = 0; i < n; i++) {
             this->ang_drift += this->poll().gyr;
@@ -46,6 +48,8 @@ public:
         }
         this->ang_drift /= n;
         this->acc_drift /= n;
+        // Range: high speed
+        this->d.setGyroRange(MPU6050_RANGE_2000_DEG);
     }
 
     /**
@@ -82,7 +86,10 @@ public:
       return this->acc_drift;
     }
 
-    vec3 get_acc() const {
+    /**
+     * Get the last-polled acceleromter readings(m/s^2) without drift compensation
+     */
+    vec3 accel_raw() const {
       return this->acc;
     }
 
