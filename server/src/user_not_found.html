@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>User Not Found</title>
+
+        <!-- DEPENDENCIES -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <script>
+            const on_input = (idxs) => {
+                // console.log(idxs);
+                idxs = JSON.parse(idxs)
+                console.log(idxs);
+                console.log(`btn${idxs['i']}`);
+                $(`#btn${idxs['old']}`).css('border', 'none');
+                $(`#btn${idxs['i']}`).css('border', '10px solid red');
+
+                if (idxs['op'] == 'select') {
+                    $(`#btn${idxs['i']}`).click();
+                }
+                $.get("https://608dev-2.net/sandbox/sc/team27/button_server.py", on_input)
+            }
+            $.get("https://608dev-2.net/sandbox/sc/team27/button_server.py", on_input)
+        </script>
+
+        <h1>User not found. Please Register.</h1>
+        <form action="#" method="get">
+
+        <button id="btn0" type="submit" name="back_to_login" value="True" formaction="user_web_server.py">
+            Back to Login
+        </button>
+        </form>
+
+    </body>
+</html>

@@ -5,9 +5,7 @@ button_controls_db = '/var/jail/home/team27/button_controls.db'
 def request_handler(request):
     if request['method'] == 'GET':
         cur, old = get_controls()
-        # return {"i": cur[1], "old": old[1], "op": cur[0]}
-        # return "{\"i\": %s, \"old\": %s}" % (cur[1], old[1])
-        return "{\"i\": %s, \"old\": %s, \"op\": \"%s\"}" % (cur[1], old[1], cur[0])
+        return "{\"i\": %s, \"old\": %s, \"op\": \"%s\"}" % (cur[1], old[1], cur[0])  # noqa: E501
 
 
 def create_database():

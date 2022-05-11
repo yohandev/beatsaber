@@ -1,4 +1,5 @@
 import sqlite3
+import json
 
 db = '/var/jail/home/team27/users_and_scores.db'
 
@@ -6,8 +7,11 @@ db = '/var/jail/home/team27/users_and_scores.db'
 def request_handler(request):
     if request['method'] == 'GET':
         data = get_top_scores()
-        return '<h1>Leaderboard:</h1> <p>Top 10: {}</p><br> \
-            <a href="./user_web_server.py">Back to Login</a>'.format(data)
+
+        lb = []
+        for elm in data:
+            lb.append(elm[0] + ": " + str(elm[1]))
+        return json.dumps(lb[::-1])
 
 
 def create_database():

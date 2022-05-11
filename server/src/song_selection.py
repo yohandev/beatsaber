@@ -5,36 +5,24 @@ button_controls_db = '/var/jail/home/team27/button_controls.db'
 
 
 def request_handler(request):
-    # return request
     if request['method'] == 'GET':
+        if 'new' in request['args']:
+            user, score = request['values']['username'], request['values']['score']  # noqa: E501
+            updated_db = set_data(user, score, returning=False)
+            if not updated_db:
+                with open("/var/jail/home/team27/registered_user.html", "r") as f:
+                    return f.read()
+        elif 'returning' in request['args']:
+            user, score = request['values']['username'], request['values']['score']  # noqa: E501
+            updated_db = set_data(user, score, returning=True)
+            if not updated_db:
+                with open("/var/jail/home/team27/user_not_found.html", "r") as f:
+                    return f.read()
+        elif 'leaderboard' in request['args']:
+            with open("/var/jail/home/team27/leaderboard.html", "r") as f:
+                return f.read()
         with open("/var/jail/home/team27/songlib.html", "r") as f:
             return f.read()
-
-    # elif request['method'] == 'POST':
-    #     if 'new' in request['form']:
-    #         user, score = request['form']['username'], request['form']['score']
-    #         updated_db = set_data(user, score, returning=False)
-    #         if updated_db:
-    #             return '<h1>{} Score Updated!:</h1> <p>Score: {}</p><br> \
-    #                 <a href="./user_web_server.py">Change User/Game Score</a>'.format(user, score)
-    #         else:
-    #             return '<h1>This username is already registered. Please Login.</h1> <br> \
-    #                 <a href="./user_web_server.py">Back to Login</a>'
-    #     elif 'returning' in request['form']:
-    #         user, score = request['form']['username'], request['form']['score']
-    #         updated_db = set_data(user, score, returning=True)
-    #         if updated_db:
-    #             return '<h1>{} Score Updated!:</h1> <p>Score: {}</p><br> \
-    #                 <a href="./user_web_server.py">Change User/Game Score</a>'.format(user, score)
-    #         else:
-    #             return '<h1>User not found. Please Register.</h1> <br> \
-    #                 <a href="./user_web_server.py">Back to Login</a>'
-
-    #     elif 'leaderboard' in request['form']:
-    #         data = get_top_scores()
-    #         return '<h1>Leaderboard:</h1> <p>Top 10: {}</p><br> \
-    #             <a href="./user_web_server.py">Back to Login</a>'.format(data)
-    #     return request['form']
 
     else:
         return '<h1>Invalid request</h1>'
@@ -56,7 +44,7 @@ def set_data(user, score, returning=False):
     conn = sqlite3.connect(db)
     c = conn.cursor()
 
-    c.execute('''SELECT user, score, highscore FROM game_db WHERE user = ?''', (user,))
+    c.execute('''SELECT user, score, highscore FROM game_db WHERE user = ?''', (user,))   # noqa: E501
     result = c.fetchone()
 
     if returning:
@@ -66,9 +54,9 @@ def set_data(user, score, returning=False):
             return False
         user_hs = get_highscore(user)[0]
         if int(score) > user_hs:
-            c.execute('''UPDATE game_db SET score = (?), highscore = (?) WHERE user = (?)''', (score, score, user))
+            c.execute('''UPDATE game_db SET score = (?), highscore = (?) WHERE user = (?)''', (score, score, user))   # noqa: E501
         else:
-            c.execute("UPDATE game_db SET score = (?), highscore = (?) WHERE user = (?)", (score, user_hs, user))
+            c.execute("UPDATE game_db SET score = (?), highscore = (?) WHERE user = (?)", (score, user_hs, user))   # noqa: E501
 
     else:
         if result is not None:
@@ -83,13 +71,11 @@ def set_data(user, score, returning=False):
 
 
 def get_highscore(user):
-    # TODO: fix highscore implementation by adding timestamps and sorting in ascending order prior to getting
-
     create_database()
     conn = sqlite3.connect(db)
     c = conn.cursor()
 
-    things = c.execute('''SELECT highscore FROM game_db WHERE user = (?)''', (user, )).fetchone()
+    things = c.execute('''SELECT highscore FROM game_db WHERE user = (?)''', (user, )).fetchone()  # noqa: E501
 
     conn.commit()
     conn.close()
@@ -102,7 +88,7 @@ def get_top_scores():
     conn = sqlite3.connect(db)
     c = conn.cursor()
 
-    things = c.execute('''SELECT user, highscore FROM game_db ORDER BY highscore ASC LIMIT 10''').fetchall()
+    things = c.execute('''SELECT user, highscore FROM game_db ORDER BY highscore ASC LIMIT 10''').fetchall()  # noqa: E501
 
     conn.commit()
     conn.close()
