@@ -24,6 +24,13 @@ typedef int64_t i64;
 typedef float f32;
 typedef double f64;
 
+/**
+ * Standard axes
+ */
+enum Axis {
+    X, Y, Z
+};
+
 // A 3-dimensional vector
 struct vec3 {
     f64 x;
@@ -88,4 +95,35 @@ struct vec3 {
             .z = this->z / s,
         };
     }
+
+    f64 len() const {
+        return sqrt(this->x * this->x + this->y * this->y + this->z * this->z);
+    }
+
+    /**
+     * Rotate this vector along the given axis
+     */
+    vec3 rotate_axis(Axis axis, f64 angle) const {
+        switch (axis) {
+            case X: return {
+                .x = this->x,
+                .y = (cos(angle) * this->y) - (sin(angle) * this->z),
+                .z = (sin(angle) * this->y) + (cos(angle) * this->z),
+            };
+            case Y: return {
+                .x = (cos(angle) * this->x) - (sin(angle) * this->z),
+                .y = this->y,
+                .z = (sin(angle) * this->x) + (cos(angle) * this->z),
+            };
+            case Z: return {
+                /* TODO */
+            };
+        }
+        return vec3();
+    }
+
+    /**
+     * Return the zero vector
+     */
+    static vec3 zero() { return { .x = 0, .y = 0, .z = 0 }; }
 };
