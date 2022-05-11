@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 #include <Arduino.h>
+#include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
+#include <SPI.h>
 
 class Draw{
   int draw_counter;
@@ -12,7 +14,6 @@ class Draw{
   uint8_t AUDIO_PWM;
 
 
-
 public:
 
 void begin(){
@@ -21,7 +22,7 @@ void begin(){
   old_note =0;
   AUDIO_TRANSDUCER = 14;
   AUDIO_PWM = 0;
-  tft = TFT_eSPI();
+  //tft = TFT_eSPI();
   tft.init();
   tft.setRotation(2);
   tft.setTextSize(1);
@@ -31,6 +32,12 @@ void begin(){
   ledcWrite(AUDIO_PWM, 0); //0 is a 0% duty cycle for the NFET
   ledcAttachPin(AUDIO_TRANSDUCER, AUDIO_PWM);
 }
+
+void set_animationNumber(int number){
+  tft.fillScreen(TFT_BLACK);
+  draw_animationNumber = number;
+}
+
 
 void make_sound(){
   
@@ -64,7 +71,7 @@ void draw_startScreen(){
   tft.println(" use website to begin");
 }
 
-void draw_score(){
+void draw_score(int score){
   if (draw_animationNumber==0){
   tft.setTextColor(TFT_WHITE);
   tft.setFreeFont(&FreeSansOblique12pt7b);
@@ -125,11 +132,11 @@ void draw_miss(){
   }
 }
 
-void draw(){
+void draw(int score){
   make_sound();
   draw_miss();
   draw_hit();
-  draw_score();
+  draw_score(score);
 }
 
-}
+};

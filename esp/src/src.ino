@@ -9,8 +9,8 @@
 #include "draw.h"
 
 /* PROGRAM PARAMETERS */
-// #define UPLOAD_RECV         // Uncomment to upload the receiver code
-#define UPLOAD_LEFT         // Uncomment to upload the left-remote's code
+#define UPLOAD_RECV         // Uncomment to upload the receiver code
+//#define UPLOAD_LEFT         // Uncomment to upload the left-remote's code
 
 const u8 ADDR_RECV[] = { 0x7C, 0xDF, 0xA1, 0x1A, 0x2F, 0xE6 };
 const u8 ADDR_L[] = {};
@@ -46,14 +46,14 @@ void loop() {
         Serial.read((u8*)&hits, sizeof(i32));
         Serial.printf("Hits: %d\n", hits);
         if(hits>0){
-            draw_animationNumber = 1;
+            draw.set_animationNumber(1);
             score+=hits;
         }else{
-            draw_animationNumber = 2;
+            draw.set_animationNumber(2);
         }
     }
     if(timer.poll()){
-        draw.draw();
+        draw.draw(score);
     }
 }
 
