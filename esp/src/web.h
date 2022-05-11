@@ -4,14 +4,11 @@
 #pragma once
 
 #include <Arduino.h>
-#include <WiFiClientSecure.h>
 #include <WiFi.h>
 
 class Web {
-    char res[1028];     // Response buffer
     char req[1028];     // Request buffer
-    
-    WiFiClientSecure cli;
+    char res[1028];     // Response buffer
 public:
     /**
      * Attempts to connect to the given network, blocking until connected
@@ -39,7 +36,7 @@ public:
      * instance's response buffer. Operation is blocking and returns `true`
      * if it suceeded.
      */
-    bool get(const char* cert, const char* host, const char* endpoint, ...) {
+    bool get(const char* host, const char* endpoint, ...) {
         // Build HTTP header
         int i = 0;
         va_list args;
@@ -50,7 +47,7 @@ public:
         va_end(args);
 
         // Send request
-        return this->fetch(host, this->req, cert);
+        return this->fetch(host, this->req);
     }
 
     /**
@@ -58,7 +55,7 @@ public:
      * this instance's response buffer. Operation is blocking and returns `true`
      * if it suceeded.
      */
-    bool post(const char* cert, const char* host, const char* endpoint, const char* body, ...) {
+    bool post(const char* host, const char* endpoint, const char* body, ...) {
         // Build HTTP header
         int i = 0, cl = 0;
         va_list args;
@@ -78,32 +75,29 @@ public:
         va_end(args);
 
         // Send request
-        return this->fetch(host, this->req, cert);
+        return this->fetch(host, this->req);
     }
 
     /**
      * Sends a generic HTTP `req`uest to `host`, overwritting this instance's
      * response buffer. (Blocking!)
      */
-    bool fetch(const char* host, const char* req, const char* cert = NULL, int timeout = 6000) {
+    bool fetch(const char* host, const char* req, int timeout = 6000) {
+        WiFiClient client;
         uint32_t start = millis();
-        uint16_t port = cert ? 443 : 80;
-
-        this->cli.setHandshakeTimeout(cert ? 30 : 0);
-        this->cli.setCACert(cert);
 
         // Connect on port 80
-        if (!this->cli.connect(host, port, timeout)) return false;
+        if (!client.connect(host, 80)) return false;
         // Send request
-        this->cli.print(req);
+        client.print(req);
 
         // Read header
-        while (this->cli.connected()) {
+        while (client.connected()) {
             // Timeout
             if (millis() - start > timeout) return false;
             
             // Read line
-            this->cli.readBytesUntil('\n', this->res, sizeof(this->res));
+            client.readBytesUntil('\n', this->res, sizeof(this->res));
             // End of header(delimited by blank line)
             if (strcmp(this->res, "\r") == 0) break;
 
@@ -113,13 +107,13 @@ public:
 
         // Read body
         int i;
-        for (i = 0; i < sizeof(this->res) && this->cli.available(); i++) {
-            this->res[i] = this->cli.read();
+        for (i = 0; i < sizeof(this->res) && client.available(); i++) {
+            this->res[i] = client.read();
         }
         this->res[i] = '\0';
 
         // Terminate HTTP connection
-        this->cli.stop();
+        client.stop();
 
         return true;
     }

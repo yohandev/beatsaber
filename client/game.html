@@ -29,13 +29,12 @@
             class Level {
                 // Parse `info.dat`, `level.dat` in JSON format
                 constructor(info, level) {
-                    this.info = info; // Raw level metadata
-                    this.level = level["_notes"]; // Raw level data
-                    this.active = []; // Notes currently in level
-                    this.inc = 0; // Index of next note to poll
-                    this.start = null; // First time passed in
-                    this.lsaber = null; // Last left saber heading passed in
-                    this.rsaber = null; // Last right saber heading passed in
+                    this.info = info;               // Raw level metadata
+                    this.level = level["_notes"];   // Raw level data
+                    this.active = [];               // Notes currently in level
+                    this.inc = 0;                   // Index of next note to poll
+                    this.start = null;              // First time passed in
+                    this.saber = [null, null];      // Last left saber heading passed in
                 }
 
                 // Returns new notes to spawn for the given time, in seconds.
@@ -60,45 +59,44 @@
                 // Takes time(in beats), current heading of the light saber(world space),
                 // yields all the notes that were destroyed.
                 // TODO manages points
-                *hit(time, lsaber, rsaber) {
+                *hit(time, pos, i) {
                     // Convert to beats
                     time = this.time(time)
 
-                    const len2 = (v) => v[0]*v[0] + v[1]*v[1] + v[2]*v[2]
-                    const sub = (a, b) => a.map((_, i) => a[i] - b[i])
-                    // Tangential velocity
-                    let lvel = sub(lsaber, this.lsaber ?? lsaber)
-                    let rvel = sub(rsaber, this.rsaber ?? rsaber)
-                    this.lsaber = lsaber
-                    this.rsaber = rsaber
-
+                    // Tangential velocities
+                    let vel
+                    if (!this.saber[i]) {
+                        this.saber[i] = pos
+                    }
+                    vel = pos.setZ(0).clone().sub(this.saber[i])
+                    this.saber[i] = pos
+                    
                     // Only accept velocities past a certain speed
-                    if (len2(lvel) < 3) {
+                    if (vel.length() < 0.4) {
                         return
                     }
 
                     // Reduced length of `this.active`
-                    let i = 0;
+                    let j = 0;
                     for (const note of this.active) {
-                        // 1. Box-ray intersection
-                        //    >> For now, compare time
-                        //    >> TODO actual bounding box computation
-                        if (Math.abs(time - note.beat) > 0.5) {
-                            continue
+                        // 1. Time intersection
+                        if (Math.abs(time - note.beat) <= 0.5)
+                        {
+                            // 2. Red-red/Blue-blue intersection
+                            if (note.type == i) {
+                                // 3. Angle
+                                if (vel.dot(note.v) / vel.length() < -0.35) {
+                                    // Destroy
+                                    yield note
+                                    continue
+                                }
+                            }
                         }
-                        if (note.type != 0) {
-                            continue
-                        }
-                        // 2. Angle
-                        const dot = (n, s) => n.map((_, i) => n[i] * s[i]).reduce((x, y) => x + y)
-                        let angle = dot(note.v, lvel)
-                        angle /= Math.sqrt(len2(lvel))
-                        if (angle < -0.35) {
-                            // Destroy
-                            yield note;
-                            continue;
-                        }
+                        // Stay alive
+                        this.active[j++] = note
                     }
+                    // Remove destroyed notes
+                    this.active.splice(j)
                 }
 
                 // Returns the time, in beats, given the time in seconds
@@ -109,16 +107,6 @@
                     }
                     // Convert to beats
                     return ((t - this.start) * this.bpm) / 60;
-                }
-
-                // Returns the velocity of the light saber, given its new heading
-                saber_vel(v) {
-                    const last = this.saber ?? v;
-                    const vel = [v[0] - last[0], v[1] - last[1], v[2] - last[2]];
-
-                    this.saber = v;
-
-                    return vel;
                 }
 
                 // Beats per minute of this level
@@ -145,15 +133,15 @@
                 };
                 // Cut direction -> Vector(world space)
                 static vector = {
-                    0: [0, 1, 0],
-                    1: [0, -1, 0],
-                    2: [-1, 0, 0],
-                    3: [1, 0, 0],
-                    4: [-Math.SQRT1_2, Math.SQRT1_2, 0],
-                    5: [Math.SQRT1_2, Math.SQRT1_2, 0],
-                    6: [-Math.SQRT1_2, -Math.SQRT1_2, 0],
-                    7: [Math.SQRT1_2, -Math.SQRT1_2, 0],
-                    8: [0, 0, 0],
+                    0: { x: 0, y: 1, z: 0 },
+                    1: { x: 0, y: -1, z: 0 },
+                    2: { x: -1, y: 0, z: 0 },
+                    3: { x: 1, y: 0, z: 0 },
+                    4: { x: -Math.SQRT1_2, y: Math.SQRT1_2, z: 0 },
+                    5: { x: Math.SQRT1_2, y: Math.SQRT1_2, z: 0 },
+                    6: { x: -Math.SQRT1_2, y: -Math.SQRT1_2, z: 0 },
+                    7: { x: Math.SQRT1_2, y: -Math.SQRT1_2, z: 0 },
+                    8: { x: 0, y: 0, z: 0 },
                 };
                 // Spacing between notes(m/beat)
                 static spacing = 15;
@@ -165,16 +153,6 @@
                     this.col = json["_lineLayer"]; // Column/vertical position(0-2| bottom -> top)
                     this.row = json["_lineIndex"]; // Row/horizontal position(0-3| left -> right)
                     this.dir = json["_cutDirection"]; // Cut direction(0-8| ↑ | ↓ | ← | → | ↖ | ↗ | ↙ | ↘ | • |)
-                }
-
-                // Get the angle between this note's cut direction and a vector
-                angle_with(v) {
-                    // Normalize
-                    const n = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-                    // Dot product
-                    const dot = v[0] * this.v[0] + v[1] * this.v[1] + v[2] * this.v[2];
-                    // Angle
-                    return n > 0.05 ? (180 / Math.PI) * Math.acos(dot / n) : Infinity;
                 }
 
                 // Get this note's Z-axis rotation
@@ -279,14 +257,8 @@
             };
             const lsaber = prefabs["rsaber"];
             const rsaber = prefabs["bsaber"];
-            const heading = new THREE.ArrowHelper(
-                new THREE.Vector3(), // Direction
-                new THREE.Vector3(-1, 0, -3), // Origin
-                4, // Length
-                0xffff00 // Color
-            );
-            const ltracker = new THREE.AxesHelper(5);
-            const rtracker = new THREE.AxesHelper(5);
+            const ltracker = new THREE.Object3D();
+            const rtracker = new THREE.Object3D();
 
             lsaber.position.set(-1, -3, -10);
             rsaber.position.set(+1, -3, -10);
@@ -309,7 +281,6 @@
             scene.add(lit["ambient"]);
             cam.add(lsaber);
             cam.add(rsaber);
-            cam.add(heading);
             cam.add(lit["direct"]);
             cam.add(lit["gentle"]);
             lsaber.add(ltracker);
@@ -363,11 +334,18 @@
                     // Get next input
                     reader.read().then(input);
 
-                    // f64 x3
-                    if (!time || value.length != 24) {
+                    // i32 + f64 x3
+                    if (!time || value.length != 32) {
                         return;
                     }
-                    lsaber.rotation.set(...new Float64Array(value.buffer, 0, 3));
+                    const ctrl = new Float64Array(value.buffer, 0, 1);
+                    const rot = new Float64Array(value.buffer, 8, 3);
+                    if (ctrl[0] < 100.0) {
+                        lsaber.rotation.set(...rot);
+                    } else {
+                        rsaber.rotation.set(...rot);
+                    }
+                    
 
                     // Calculate hits
                     let lpos = new THREE.Vector3();
@@ -377,7 +355,11 @@
                     rtracker.getWorldPosition(rpos);
 
                     let count = 0;
-                    for (const note of notes.hit(time, lpos.toArray(), rpos.toArray())) {
+                    for (const note of notes.hit(time, lpos, 0)) {
+                        scene.remove(note.obj);
+                        count++;
+                    }
+                    for (const note of notes.hit(time, rpos, 1)) {
                         scene.remove(note.obj);
                         count++;
                     }

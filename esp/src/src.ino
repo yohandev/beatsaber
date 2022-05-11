@@ -11,9 +11,9 @@
 // #define UPLOAD_RECV         // Uncomment to upload the receiver code
 #define UPLOAD_LEFT         // Uncomment to upload the left-remote's code
 
-const u8 ADDR_RECV[] = { 0x7C, 0xDF, 0xA1, 0x1A, 0x2F, 0xE6 };
-const u8 ADDR_L[] = {};
-const u8 ADDR_R[] = {};
+const u8 ADDR_RECV[] = { 0x60, 0x55, 0xF9, 0xD9, 0xD7, 0x2A };
+const u8 ADDR_L[] = { 0x60, 0x55, 0xF9, 0xD9, 0xD7, 0x02 };
+const u8 ADDR_R[] = { 0x7C, 0xDF, 0xA1, 0x1A, 0x2F, 0xE6 };
 
 #if defined UPLOAD_RECV
 void setup() {
@@ -23,12 +23,21 @@ void setup() {
     // Await serial
     while (!Serial);
 
-    // Place this in ADDR below
+    // Place this in ADDR_RECV above
     Serial.println(Peer::addr());
 
     // Relay every message received
     Peer::recv(+[](const u8* mac, const u8* buf, int len) {
-        Serial.write(buf, len);
+        struct {
+            f64 ctrl;
+            vec3 rot;
+        } packet;
+        // Left(0) or right(1)
+        packet.ctrl = (mac[0] == ADDR_L[0]) ? 0.0 : 999.0;
+        // Rotation
+        memcpy(&packet.rot, buf, len);
+        // Write
+        Serial.write((u8*)&packet, sizeof(packet));
     });
 }
 
@@ -41,21 +50,18 @@ void loop() {
 }
 
 #else
-Timer timer(50);        // Serial write timer
-Timer imu_timer(1000/184);
+Timer t20hz(50);        // Serial write timer
+Timer t184hz(1000/184); // IMU read timer
+
 Imu imu;                // MPU6050
+vec3 rot;               // Integrated rotation
 
 Peer peer(ADDR_RECV);   // Peer networking
 Web http;
 
-Button btn1(45);
+Button btn1(45);        // Reset button
 Button btn2(39);
 
-vec3 rot;               // Integrated rotation
-vec3 vel;               // Integrated velocity
-vec3 pos;               // Integrated position
-vec3 g;                 // Gravity vector(from calibration)
-u64 t;                  // Last time reading(ms)
 
 void setup() {
     // Website is configured for 115200 bps
@@ -78,59 +84,49 @@ void setup() {
         Serial.println("Could not connected to MPU6050!");
         ESP.restart();
     }
-    g = imu.poll().accel_raw();
+    // Roughly matches timer above
     imu.d.setFilterBandwidth(MPU6050_BAND_184_HZ);
-    imu.calibrate(100, 10, g);
+    // Must be layed flat and at rest
+    imu.calibrate(100, 10);
+
+    // Place this in ADDR_L or ADDR_R above
+    Serial.println(Peer::addr());
 }
 
 void loop() {
     // Serial/Peer write
-    if (timer.poll()) {
-        Serial.write((u8*)&rot, sizeof(vec3));
+    if (t20hz.poll()) {
+        // Serial.write((u8*)&rot, sizeof(vec3));
         peer.send((u8*)&rot, sizeof(vec3));
     }
-    // Get latest IMU readings
-    if (!imu_timer.poll()) {
-        return;
+
+    // IMU readings
+    if (t184hz.poll()) {
+        // Integrate(Θ[n] = Θ[n-1] + ω * Δt)
+        rot += imu.poll().gyro() * t184hz.dt();
     }
-    imu.poll();
-    if (!t) {
-        t = micros();
-    }
-    // Delta time
-    f64 dt = (micros() - t) / 1000000.0;
-    t = micros();
 
-    // Integrate(Θ[n] = Θ[n-1] + ω * Δt)
-    rot += imu.gyro() * dt;
-
-    // Local -> Global acceleration based off rotation
-    vec3 acc = imu.accel_raw()
-        .rotate_axis(Y, rot.y)
-        .rotate_axis(X, rot.x);
-    // Compensate for gravity
-    acc -= g;
-    // Integrate(v[n] = v[n-1] + a * Δt)
-    vel += acc * dt;
-    // Integrate(x[n] = x[n-1] + v * Δt)
-    pos += vel * dt;
-
-    // if (vel.len() > 2.0) {
-    //     f64 theta = atan2(vel.y, vel.x);
-    //     Serial.printf("%f\n", theta * 180.0 / PI);
-    //     vel = vec3::zero();
-    // }
-
-    // vec3 a = imu.accel();
-    // if (abs(a.len() - 10.5) < 0.1) {
-    //     rot.x = asin(a.y / sqrt(a.y*a.y + a.z*a.z)) - (PI / 2.0);
-    //     rot.y = asin(a.x / sqrt(a.x*a.x + a.z*a.z));
-    //     rot.z = 0;
-    // }
     // Reset button
-    if (btn1.poll()) {
+    if (btn1.poll() == 1) {
         rot = vec3::zero();
-        g = imu.poll().accel_raw();
+        #if defined UPLOAD_LEFT
+        if (!http.post("608dev-2.net", "sandbox/sc/team27/user_esp_server.py", "op=select")
+        || !http.post("608dev-2.net", "sandbox/sc/team27/user_esp_server.py", "op=reset")) {
+            Serial.println("Post request failed!");
+        }
+        #endif
+    }
+    // GUI button
+    if (btn2.poll() == 1) {
+        #if defined UPLOAD_LEFT
+        if (!http.post("608dev-2.net", "sandbox/sc/team27/user_esp_server.py", "op=right")) {
+            Serial.println("Post request failed!");
+        }
+        #else
+        if (!http.post("608dev-2.net", "sandbox/sc/team27/user_esp_server.py", "op=left")) {
+            Serial.println("Post request failed!");
+        }
+        #endif
     }
 }
 #endif
