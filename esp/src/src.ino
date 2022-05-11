@@ -42,6 +42,7 @@ void loop() {
 
 #else
 Timer timer(50);        // Serial write timer
+Timer imu_timer(1000/184);
 Imu imu;                // MPU6050
 
 Peer peer(ADDR_RECV);   // Peer networking
@@ -77,11 +78,21 @@ void setup() {
         Serial.println("Could not connected to MPU6050!");
         ESP.restart();
     }
-    imu.calibrate(100, 10);
+    g = imu.poll().accel_raw();
+    imu.d.setFilterBandwidth(MPU6050_BAND_184_HZ);
+    imu.calibrate(100, 10, g);
 }
 
 void loop() {
+    // Serial/Peer write
+    if (timer.poll()) {
+        Serial.write((u8*)&rot, sizeof(vec3));
+        peer.send((u8*)&rot, sizeof(vec3));
+    }
     // Get latest IMU readings
+    if (!imu_timer.poll()) {
+        return;
+    }
     imu.poll();
     if (!t) {
         t = micros();
@@ -94,7 +105,7 @@ void loop() {
     rot += imu.gyro() * dt;
 
     // Local -> Global acceleration based off rotation
-    vec3 acc = imu.accel()
+    vec3 acc = imu.accel_raw()
         .rotate_axis(Y, rot.y)
         .rotate_axis(X, rot.x);
     // Compensate for gravity
@@ -104,22 +115,22 @@ void loop() {
     // Integrate(x[n] = x[n-1] + v * Δt)
     pos += vel * dt;
 
-    vec3 a = imu.accel();
-    if (abs(a.len() - 10.5) < 0.1) {
-        rot.x = asin(a.y / sqrt(a.y*a.y + a.z*a.z)) - (PI / 2.0);
-        rot.y = asin(a.x / sqrt(a.x*a.x + a.z*a.z));
-        rot.z = 0;
-    }
+    // if (vel.len() > 2.0) {
+    //     f64 theta = atan2(vel.y, vel.x);
+    //     Serial.printf("%f\n", theta * 180.0 / PI);
+    //     vel = vec3::zero();
+    // }
+
+    // vec3 a = imu.accel();
+    // if (abs(a.len() - 10.5) < 0.1) {
+    //     rot.x = asin(a.y / sqrt(a.y*a.y + a.z*a.z)) - (PI / 2.0);
+    //     rot.y = asin(a.x / sqrt(a.x*a.x + a.z*a.z));
+    //     rot.z = 0;
+    // }
     // Reset button
     if (btn1.poll()) {
         rot = vec3::zero();
-    }
-    // Serial/Peer write
-    if (timer.poll()) {
-        // Serial.write((u8*)&rot, sizeof(vec3));
-        Serial.printf("(%f, %f, %f)\n", vel.x, vel.y, vel.z);
-        peer.send((u8*)&rot, sizeof(vec3));
-        vel = vec3::zero();
+        g = imu.poll().accel_raw();
     }
 }
 #endif
